@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Football Coach</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4V12c0 5-4 8.5-8 10C8 20.5 4 17 4 12V6z"/></svg></span>
+        <span class="logo-text">Football Coach</span>
+      </div>
+      <button class="btn-primary" id="openModal">+ New Team</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="emptyState">
+      <h2>No teams yet</h2>
+      <p>Create your first team to get started.</p>
+      <button class="btn-primary" id="openModalHero">+ Create Team</button>
+    </section>
+
+    <section class="teams-section" id="teamsSection" style="display:none;">
+      <h2 class="section-title">Your Teams</h2>
+      <div class="teams-grid" id="teamsGrid"></div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h3 id="modalTitle">Create New Team</h3>
+        <button class="modal-close" id="closeModal" aria-label="Close"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <label for="teamNameInput">Team name</label>
+        <input
+          type="text"
+          id="teamNameInput"
+          placeholder="e.g. FC Tigers"
+          maxlength="40"
+          autocomplete="off"
+        />
+        <p class="input-error" id="inputError"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelModal">Cancel</button>
+        <button class="btn-primary" id="createTeam">Create Team</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

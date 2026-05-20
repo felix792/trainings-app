@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <a id="backLink" href="index.html" class="back-link" aria-label="Back to players">
+          <span class="back-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+          <span class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4V12c0 5-4 8.5-8 10C8 20.5 4 17 4 12V6z"/></svg></span>
+          <span class="logo-text" id="backTeamName">Football Coach</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="notFound" style="display:none;" class="hero">
+      <h2>Player not found</h2>
+      <a id="notFoundBack" href="index.html" class="btn-primary" style="text-decoration:none;">Back</a>
+    </div>
+
+    <div id="pageContent">
+      <div class="team-hero">
+        <div class="player-avatar-large" id="playerAvatar"></div>
+        <h1 class="team-headline" id="playerName"></h1>
+        <p class="team-meta" id="playerMeta"></p>
+      </div>
+
+      <div class="attrs-grid">
+
+        <!-- Strong foot -->
+        <div class="attr-card">
+          <div class="attr-label">Strong Foot</div>
+          <div class="foot-options">
+            <button class="foot-btn" data-value="Left">Left</button>
+            <button class="foot-btn" data-value="Right">Right</button>
+            <button class="foot-btn" data-value="Both">Both</button>
+          </div>
+        </div>
+
+        <!-- Defensive ability -->
+        <div class="attr-card">
+          <div class="attr-label">Defensive Ability</div>
+          <div class="rating-row" data-attr="defensiveAbility"></div>
+          <div class="rating-value" id="val-defensiveAbility">—</div>
+        </div>
+
+        <!-- Shot -->
+        <div class="attr-card">
+          <div class="attr-label">Shot</div>
+          <div class="rating-row" data-attr="shot"></div>
+          <div class="rating-value" id="val-shot">—</div>
+        </div>
+
+        <!-- Condition -->
+        <div class="attr-card">
+          <div class="attr-label">Condition</div>
+          <div class="rating-row" data-attr="condition"></div>
+          <div class="rating-value" id="val-condition">—</div>
+        </div>
+
+        <!-- Touch -->
+        <div class="attr-card">
+          <div class="attr-label">Touch</div>
+          <div class="rating-row" data-attr="touch"></div>
+          <div class="rating-value" id="val-touch">—</div>
+        </div>
+
+        <!-- Awareness -->
+        <div class="attr-card">
+          <div class="attr-label">Awareness</div>
+          <div class="rating-row" data-attr="awareness"></div>
+          <div class="rating-value" id="val-awareness">—</div>
+        </div>
+
+        <!-- 1v1 Defensive -->
+        <div class="attr-card">
+          <div class="attr-label">1v1 Defensive</div>
+          <div class="rating-row" data-attr="oneVsOneDefensive"></div>
+          <div class="rating-value" id="val-oneVsOneDefensive">—</div>
+        </div>
+
+        <!-- 1v1 Offensive -->
+        <div class="attr-card">
+          <div class="attr-label">1v1 Offensive</div>
+          <div class="rating-row" data-attr="oneVsOneOffensive"></div>
+          <div class="rating-value" id="val-oneVsOneOffensive">—</div>
+        </div>
+
+        <!-- Moral -->
+        <div class="attr-card">
+          <div class="attr-label">Moral</div>
+          <div class="rating-row" data-attr="moral"></div>
+          <div class="rating-value" id="val-moral">—</div>
+        </div>
+
+        <!-- Speed -->
+        <div class="attr-card">
+          <div class="attr-label">Speed</div>
+          <div class="rating-row" data-attr="speed"></div>
+          <div class="rating-value" id="val-speed">—</div>
+        </div>
+
+        <!-- Physical Ability -->
+        <div class="attr-card">
+          <div class="attr-label">Physical Ability</div>
+          <div class="rating-row" data-attr="physicalAbility"></div>
+          <div class="rating-value" id="val-physicalAbility">—</div>
+        </div>
+
+        <!-- Positions -->
+        <div class="attr-card attr-card-wide">
+          <div class="attr-label">Positions</div>
+          <div class="positions-grid" id="positionsGrid"></div>
+        </div>
+
+      </div>
+
+      <!-- Notes -->
+      <div class="notes-section">
+        <div class="attr-label">Notes</div>
+        <textarea id="playerNotes" class="notes-textarea" placeholder="Add notes about this player…" maxlength="2000"></textarea>
+        <div class="notes-status" id="notesStatus"></div>
+      </div>
+
+      <!-- Game Stats -->
+      <section class="player-stats-section">
+        <h2 class="section-title">Game Stats</h2>
+        <div id="statsSection"><p class="players-empty">No game stats recorded yet.</p></div>
+      </section>
+
+      <!-- Stat Progression -->
+      <section class="player-stats-section" id="progressionSection" style="display:none;">
+        <h2 class="section-title">Stat Progression</h2>
+        <div class="chart-stat-tabs" id="chartStatTabs"></div>
+        <div class="chart-wrap">
+          <canvas id="statChart"></canvas>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="player.js"></script>
+</body>
+</html>

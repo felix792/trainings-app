@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Players</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <a id="backLink" href="index.html" class="back-link" aria-label="Back to team">
+          <span class="back-arrow">&#8592;</span>
+          <span class="logo-icon">&#x26BD;</span>
+          <span class="logo-text" id="backTeamName">Football Coach</span>
+        </a>
+      </div>
+      <button class="btn-primary" id="openAddPlayer">+ Add Player</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="notFound" style="display:none;" class="hero">
+      <div class="hero-icon">&#128100;</div>
+      <h2>Team not found</h2>
+      <p>This team may have been deleted.</p>
+      <a href="index.html" class="btn-primary" style="text-decoration:none;">Back to Home</a>
+    </div>
+
+    <div id="pageContent">
+      <div class="team-hero">
+        <div class="team-hero-icon">&#128100;</div>
+        <h1 class="team-headline">Players</h1>
+        <p id="teamMeta" class="team-meta"></p>
+      </div>
+
+      <div class="sort-bar" id="sortBar">
+        <span class="sort-label">Sort by</span>
+        <button class="sort-btn sort-btn-active" data-sort="name">Name</button>
+        <button class="sort-btn" data-sort="shot">Shot</button>
+        <button class="sort-btn" data-sort="defensiveAbility">Defense</button>
+        <button class="sort-btn" data-sort="condition">Condition</button>
+        <button class="sort-btn" data-sort="touch">Touch</button>
+        <button class="sort-btn" data-sort="awareness">Awareness</button>
+        <button class="sort-btn" data-sort="oneVsOneDefensive">1v1 Def</button>
+        <button class="sort-btn" data-sort="oneVsOneOffensive">1v1 Off</button>
+        <button class="sort-btn" data-sort="moral">Moral</button>
+        <button class="sort-btn" data-sort="speed">Speed</button>
+        <button class="sort-btn" data-sort="physicalAbility">Physical</button>
+        <button class="sort-btn" data-sort="strongFoot">Strong Foot</button>
+        <button class="sort-btn" data-sort="position">Position</button>
+      </div>
+      <div class="position-filter-bar" id="positionFilterBar" style="display:none;">
+        <span class="sort-label">Filter</span>
+      </div>
+
+      <div id="playersEmpty" class="players-empty" style="display:none;">
+        <p>No players yet. Add your first player to get started.</p>
+      </div>
+
+      <ul class="players-list" id="playersList"></ul>
+    </div>
+  </main>
+
+  <!-- Add Player Modal -->
+  <div class="modal-backdrop" id="playerModalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="playerModalTitle">
+      <div class="modal-header">
+        <h3 id="playerModalTitle">Add Player</h3>
+        <button class="modal-close" id="closePlayerModal" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label for="playerNameInput">Player name</label>
+        <input
+          type="text"
+          id="playerNameInput"
+          placeholder="e.g. Max Mustermann"
+          maxlength="50"
+          autocomplete="off"
+        />
+        <p class="input-error" id="playerInputError"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelPlayerModal">Cancel</button>
+        <button class="btn-primary" id="addPlayerBtn">Add Player</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="players.js"></script>
+</body>
+</html>

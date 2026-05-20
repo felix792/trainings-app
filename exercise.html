@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exercise</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <a id="backLink" href="index.html" class="back-link" aria-label="Back to exercises">
+          <span class="back-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+          <span class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4V12c0 5-4 8.5-8 10C8 20.5 4 17 4 12V6z"/></svg></span>
+          <span class="logo-text" id="backTeamName">Football Coach</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="notFound" style="display:none;" class="hero">
+      <h2>Exercise not found</h2>
+      <a id="notFoundBack" href="index.html" class="btn-primary" style="text-decoration:none;">Back</a>
+    </div>
+
+    <div id="pageContent">
+      <div class="team-hero">
+        <h1 class="team-headline" id="exerciseName"></h1>
+        <p class="team-meta" id="exerciseMeta"></p>
+      </div>
+
+      <!-- Tactic Board -->
+      <section class="tactic-section">
+        <div class="tactic-header">
+          <h2 class="section-title" style="margin-bottom:0;">Tactic Board</h2>
+          <div class="pitch-view-selector" id="pitchViewSelector">
+            <button class="pitch-view-btn pitch-view-active" data-view="full">Full</button>
+            <button class="pitch-view-btn" data-view="half">Half</button>
+            <button class="pitch-view-btn" data-view="third">Third</button>
+            <button class="pitch-view-btn" data-view="box">Box</button>
+          </div>
+          <button class="btn-secondary btn-sm" id="clearBoard">Clear all</button>
+        </div>
+
+        <div class="tactic-toolbar" id="tacticToolbar">
+          <button class="tool-btn tool-btn-active" data-tool="select" title="Move elements">
+            <span class="tool-icon tool-icon-select"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg></span>
+            <span class="tool-label">Move</span>
+          </button>
+          <button class="tool-btn" data-tool="blue" title="Add blue player">
+            <span class="tool-icon tool-icon-player" style="background:#3b82f6;"></span>
+            <span class="tool-label">Blue</span>
+          </button>
+          <button class="tool-btn" data-tool="red" title="Add red player">
+            <span class="tool-icon tool-icon-player" style="background:#ef4444;"></span>
+            <span class="tool-label">Red</span>
+          </button>
+          <button class="tool-btn" data-tool="ball" title="Add ball">
+            <span class="tool-icon tool-icon-text"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 8.5a6 6 0 0 1 7 0M8.5 15.5a6 6 0 0 0 7 0"/></svg></span>
+            <span class="tool-label">Ball</span>
+          </button>
+          <button class="tool-btn" data-tool="cone" title="Add cone">
+            <span class="tool-icon tool-icon-cone"></span>
+            <span class="tool-label">Cone</span>
+          </button>
+          <div class="tool-divider"></div>
+          <button class="tool-btn" data-tool="pass" title="Draw pass line">
+            <span class="tool-icon tool-icon-arrow tool-icon-pass"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+            <span class="tool-label">Pass</span>
+          </button>
+          <button class="tool-btn" data-tool="run" title="Draw run line">
+            <span class="tool-icon tool-icon-arrow tool-icon-run"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+            <span class="tool-label">Run</span>
+          </button>
+          <div class="tool-divider"></div>
+          <button class="tool-btn tool-btn-danger" data-tool="delete" title="Delete element">
+            <span class="tool-icon tool-icon-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></span>
+            <span class="tool-label">Delete</span>
+          </button>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="tacticCanvas"></canvas>
+        </div>
+      </section>
+
+      <!-- Notes -->
+      <div class="notes-section">
+        <div class="attr-label">Notes</div>
+        <textarea id="exerciseNotes" class="notes-textarea" placeholder="Add notes about this exercise…" maxlength="2000"></textarea>
+        <div class="notes-status" id="notesStatus"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="exercise.js"></script>
+</body>
+</html>

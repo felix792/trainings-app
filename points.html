@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Points Table</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <a id="backLink" href="index.html" class="back-link" aria-label="Back to team">
+          <span class="back-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+          <span class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4V12c0 5-4 8.5-8 10C8 20.5 4 17 4 12V6z"/></svg></span>
+          <span class="logo-text" id="backTeamName">Football Coach</span>
+        </a>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" id="resetBtn">Reset</button>
+        <button class="btn-primary" id="openSetupBtn">Setup</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="notFound" style="display:none;" class="hero">
+      <h2>Team not found</h2>
+      <a id="notFoundBack" href="index.html" class="btn-primary" style="text-decoration:none;">Back</a>
+    </div>
+
+    <div id="pageContent">
+      <div class="team-hero">
+        <h1 class="team-headline">Points Table</h1>
+        <p class="team-meta" id="teamMeta"></p>
+      </div>
+
+      <div id="noSetup" class="players-empty" style="display:none;">
+        <p>Set up the competing teams to start tracking points.</p>
+        <button class="btn-primary" id="openSetupEmpty" style="margin-top:16px;">Set Up Teams</button>
+      </div>
+
+      <div id="pointsBoard"></div>
+    </div>
+  </main>
+
+  <!-- Setup Modal -->
+  <div class="modal-backdrop" id="setupBackdrop" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+      <div class="modal-header">
+        <h3 id="setupTitle">Setup</h3>
+        <button class="modal-close" id="closeSetupBtn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body setup-modal-body" id="setupBody"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelSetupBtn">Cancel</button>
+        <button class="btn-primary" id="saveSetupBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="points.js"></script>
+</body>
+</html>
