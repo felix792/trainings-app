@@ -1,4 +1,4 @@
-const CACHE = 'fc-coach-v1';
+const CACHE = 'fc-coach-v2';
 const ASSETS = [
   '/trainings-app/',
   '/trainings-app/index.html',
@@ -25,7 +25,9 @@ const ASSETS = [
   '/trainings-app/stat.js',
   '/trainings-app/points.js',
   '/trainings-app/icon-192.png',
-  '/trainings-app/icon-512.png'
+  '/trainings-app/icon-512.png',
+  '/trainings-app/firebase-config.js',
+  '/trainings-app/db.js'
 ];
 
 self.addEventListener('install', e => {
