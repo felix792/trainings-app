@@ -123,4 +123,4 @@ document.getElementById('teamsGrid').addEventListener('keydown', (e) => {
   }
 });
 
-render();
+window.DB_READY.then(() => render());
