@@ -132,6 +132,8 @@ main {
   gap: 20px;
 }
 
+a.team-card { text-decoration: none; color: inherit; }
+
 .team-card {
   background: var(--surface);
   border: 1px solid var(--border);
