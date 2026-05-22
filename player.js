@@ -44,7 +44,7 @@ if (!player) {
   const nb = document.getElementById('notFoundBack');
   nb.href = team ? 'players.html?id=' + teamId : 'index.html';
 } else {
-  document.title = player.name + ' — PlayVision';
+  document.title = player.name + ' — TactIQ';
   document.getElementById('backTeamName').textContent = team.name;
   document.getElementById('backLink').href = 'players.html?id=' + teamId;
   document.getElementById('playerAvatar').textContent = initials(player.name);

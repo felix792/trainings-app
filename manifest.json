@@ -1,6 +1,6 @@
 {
-  "name": "PlayVision",
-  "short_name": "PlayVision",
+  "name": "TactIQ",
+  "short_name": "TactIQ",
   "description": "Manage your football teams, players, training sessions and stats.",
   "start_url": "/trainings-app/",
   "scope": "/trainings-app/",
