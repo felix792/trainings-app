@@ -53,5 +53,5 @@ if (!team) {
   navigate('goToPlays',     'plays.html?id='     + teamId);
   navigate('goToStats',     'stats.html?id='     + teamId);
   navigate('goToPoints',    'points.html?id='    + teamId);
-  navigate('goToCards',     'cards.html?id='     + teamId);
+  document.getElementById('goToCards').href = 'cards.html?id=' + teamId;
 }
