@@ -889,6 +889,16 @@ canvas {
 /* ── Player profile stats ── */
 .player-stats-section { margin-top: 40px; }
 
+.player-card-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
+}
+.player-card-wrap > div {
+  width: 240px;
+  max-width: 100%;
+}
+
 .stats-summary {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
