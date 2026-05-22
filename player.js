@@ -15,6 +15,8 @@ const ATTR_LABELS = {
   moral:            'Moral',
   speed:            'Speed',
   physicalAbility:  'Physical Ability',
+  dribbling:        'Dribbling',
+  passing:          'Passing',
   positions:        'Positions',
   strongFoot:       'Strong Foot',
 };
