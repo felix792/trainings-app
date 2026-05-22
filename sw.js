@@ -1,4 +1,4 @@
-const CACHE = 'fc-coach-v2';
+const CACHE = 'fc-coach-v3';
 const ASSETS = [
   '/trainings-app/',
   '/trainings-app/index.html',
