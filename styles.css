@@ -1059,6 +1059,40 @@ canvas {
   padding-top: 12px;
   border-top: 1px solid var(--border);
 }
+.attr-chart-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+.attr-chart-add-btn {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.attr-chart-add-btn:hover { border-color: var(--green); color: var(--text); }
+.attr-chart-del-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+.attr-chart-del-btn:hover { color: #ef4444; }
+.ah-manual {
+  font-size: 0.65rem;
+  background: var(--border);
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+}
 .attr-chart-list { margin-top: 10px; }
 .attr-chart-empty {
   font-size: 0.8rem;
@@ -1066,6 +1100,74 @@ canvas {
   text-align: center;
   padding: 6px 0;
   margin: 0;
+}
+
+/* ── Manual entry modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.modal-open { display: flex; }
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 300px;
+  max-width: 90vw;
+}
+.modal-title {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 18px;
+}
+.modal-field { margin-bottom: 14px; }
+.modal-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.modal-btn-cancel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.modal-btn-save {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--green);
+  border: 1px solid var(--green);
+  color: #fff;
 }
 
 /* ── Points table ── */
