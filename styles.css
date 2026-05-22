@@ -134,6 +134,9 @@ main {
 
 a.team-card { text-decoration: none; color: inherit; }
 
+/* ── Player mode: hide all coach-only controls ── */
+.player-mode .coach-only { display: none !important; }
+
 .team-card {
   background: var(--surface);
   border: 1px solid var(--border);
