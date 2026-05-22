@@ -73,7 +73,7 @@
     ].join(';');
     btn.textContent = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
     btn.addEventListener('click', () => {
-      if (confirm('Sign out of Football Coach?')) firebase.auth().signOut();
+      if (confirm('Sign out of PlayVision?')) firebase.auth().signOut();
     });
     header.appendChild(btn);
   }
@@ -90,7 +90,7 @@
       showOverlay(`
         <div style="text-align:center;max-width:320px;">
           <div style="font-size:3rem;margin-bottom:12px;">⚽</div>
-          <div style="color:#f1f5f9;font-size:1.25rem;font-weight:700;margin-bottom:6px;">Football Coach</div>
+          <div style="color:#f1f5f9;font-size:1.25rem;font-weight:700;margin-bottom:6px;">PlayVision</div>
           <div style="color:#94a3b8;font-size:.875rem;margin-bottom:28px;line-height:1.5;">
             Sign in with Google to sync your teams and players across all your devices.
           </div>

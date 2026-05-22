@@ -20,7 +20,7 @@ if (!team) {
   document.getElementById('teamContent').style.display = 'none';
   document.getElementById('notFound').style.display = 'flex';
 } else {
-  document.title = team.name + ' — Football Coach';
+  document.title = team.name + ' — PlayVision';
   document.getElementById('teamName').textContent = team.name;
   document.getElementById('teamMeta').textContent = 'Created ' + formatDate(team.createdAt);
 

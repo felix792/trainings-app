@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 130 130" role="img">
+  <title>PlayVision App Icon – Blau</title>
+  <desc>PlayVision football analysis app icon with eye shape containing a football pitch and blue color scheme</desc>
+  <defs>
+    <clipPath id="eyeclip">
+      <path d="M7 65 Q65 12 123 65 Q65 118 7 65Z"/>
+    </clipPath>
+  </defs>
+
+  <rect width="130" height="130" rx="30" fill="#050f1a"/>
+
+  <g clip-path="url(#eyeclip)">
+    <rect x="7" y="12" width="116" height="106" fill="#091a2e"/>
+    <rect x="18" y="23" width="94" height="84" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"/>
+    <line x1="65" y1="23" x2="65" y2="107" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+    <ellipse cx="65" cy="65" rx="11" ry="11" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.9"/>
+    <circle cx="65" cy="65" r="1.6" fill="white"/>
+    <rect x="18" y="47" width="20" height="36" fill="rgba(59,142,255,0.28)" stroke="#3b8eff" stroke-width="1.8"/>
+    <rect x="92" y="47" width="20" height="36" fill="rgba(59,142,255,0.28)" stroke="#3b8eff" stroke-width="1.8"/>
+    <rect x="18" y="54" width="8" height="22" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.9"/>
+    <rect x="104" y="54" width="8" height="22" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.9"/>
+    <circle cx="28" cy="65" r="1.8" fill="#7ecfff"/>
+    <circle cx="102" cy="65" r="1.8" fill="#7ecfff"/>
+    <path d="M38 57 A10 10 0 0 1 38 73" fill="none" stroke="#7ecfff" stroke-width="2"/>
+    <path d="M92 57 A-10 10 0 0 0 92 73" fill="none" stroke="#7ecfff" stroke-width="2"/>
+  </g>
+
+  <path d="M7 65 Q65 12 123 65 Q65 118 7 65Z" fill="none" stroke="#7ecfff" stroke-width="2.3"/>
+
+  <circle cx="65" cy="65" r="16" fill="#050f1a" stroke="#3b8eff" stroke-width="1.9"/>
+  <circle cx="65" cy="65" r="10" fill="#3b8eff"/>
+  <circle cx="65" cy="65" r="5" fill="#050f1a"/>
+  <circle cx="59" cy="59" r="3" fill="rgba(255,255,255,0.92)"/>
+
+  <circle cx="7" cy="65" r="2.8" fill="#7ecfff"/>
+  <circle cx="123" cy="65" r="2.8" fill="#7ecfff"/>
+
+  <text x="65" y="124" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="white">Play<tspan fill="#3b8eff">Vision</tspan></text>
+</svg>

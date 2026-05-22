@@ -71,7 +71,7 @@ if (!exercise) {
   document.getElementById('notFound').style.display    = 'flex';
   document.getElementById('notFoundBack').href = team ? 'exercises.html?id=' + teamId : 'index.html';
 } else {
-  document.title = exercise.name + ' — Football Coach';
+  document.title = exercise.name + ' — PlayVision';
   document.getElementById('backTeamName').textContent = team.name;
   document.getElementById('backLink').href            = 'exercises.html?id=' + teamId;
   document.getElementById('exerciseName').textContent = exercise.name;

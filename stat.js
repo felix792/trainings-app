@@ -43,7 +43,7 @@ if (!game) {
   document.getElementById('notFound').style.display    = 'flex';
   document.getElementById('notFoundBack').href = team ? 'stats.html?id=' + teamId : 'index.html';
 } else {
-  document.title = game.name + ' — Football Coach';
+  document.title = game.name + ' — PlayVision';
   document.getElementById('backTeamName').textContent = team.name;
   document.getElementById('backLink').href            = 'stats.html?id=' + teamId;
   document.getElementById('gameName').textContent     = game.name;

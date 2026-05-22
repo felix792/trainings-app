@@ -71,7 +71,7 @@ if (!play) {
   document.getElementById('notFound').style.display    = 'flex';
   document.getElementById('notFoundBack').href = team ? 'plays.html?id=' + teamId : 'index.html';
 } else {
-  document.title = play.name + ' — Football Coach';
+  document.title = play.name + ' — PlayVision';
   document.getElementById('backTeamName').textContent = team.name;
   document.getElementById('backLink').href            = 'plays.html?id=' + teamId;
   document.getElementById('playName').textContent     = play.name;

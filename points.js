@@ -22,7 +22,7 @@ if (!teamData) {
   document.getElementById('notFound').style.display    = 'flex';
   document.getElementById('notFoundBack').href = 'index.html';
 } else {
-  document.title = 'Points — Football Coach';
+  document.title = 'Points — PlayVision';
   document.getElementById('backTeamName').textContent = teamData.name;
   document.getElementById('backLink').href = 'team.html?id=' + teamId;
   document.getElementById('teamMeta').textContent = teamData.name;
