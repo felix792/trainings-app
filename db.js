@@ -127,7 +127,7 @@
       await saveProfile(user.uid, {
         role: 'coach',
         playerPermissions: {
-          players: true, exercises: true, plays: true, stats: true, points: true, cards: true,
+          players: true, exercises: true, plays: true, stats: true, points: true, cards: true, blackbox: true,
           playerSections: { attributes: true, categoryProgression: true, gameStats: true, statProgression: true }
         }
       });
