@@ -1072,6 +1072,58 @@ canvas {
   min-height: 20px;
 }
 
+/* ── Permission confirm modal ── */
+#perm-confirm-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.6);
+}
+#perm-confirm-modal.open { display: flex; }
+.perm-confirm-box {
+  background: #0e0e1a;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 24px 24px 20px;
+  max-width: 300px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.8);
+}
+.perm-confirm-msg {
+  font-size: .9rem;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+.perm-confirm-msg strong { color: #fff; }
+.perm-confirm-btns {
+  display: flex;
+  gap: 10px;
+}
+.perm-confirm-btns button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+#perm-confirm-yes {
+  background: var(--green);
+  color: #fff;
+}
+#perm-confirm-yes:hover { background: var(--green-dark); }
+#perm-confirm-no {
+  background: #1c1c2c;
+  color: var(--text-muted);
+  border: 1px solid var(--border) !important;
+}
+#perm-confirm-no:hover { color: var(--text); }
+
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
