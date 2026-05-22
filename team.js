@@ -89,33 +89,55 @@ function applyPlayerPermissions(permissions) {
   });
 }
 
-// ── Coach: inject permissions panel + team code ────────────────────────────
+// ── Coach: inject settings icon + slide-in drawer ─────────────────────────
 function injectCoachPanel() {
-  const content = document.getElementById('teamContent');
+  // Settings button in header
+  const header = document.querySelector('.header-inner');
+  const settingsBtn = document.createElement('button');
+  settingsBtn.id = 'settings-btn';
+  settingsBtn.setAttribute('aria-label', 'Player Access Settings');
+  settingsBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>`;
+  header.appendChild(settingsBtn);
 
-  const section = document.createElement('div');
-  section.innerHTML = `
-    <h2 class="section-title" style="margin-top:40px;">Player Access</h2>
-    <div style="background:#0e0e1a;border:1px solid #1c1c2c;border-radius:12px;padding:20px 24px;">
+  // Drawer backdrop + panel
+  const backdrop = document.createElement('div');
+  backdrop.id = 'settings-backdrop';
+  document.body.appendChild(backdrop);
 
-      <div style="margin-bottom:20px;">
-        <div style="font-size:.8rem;color:#6868a0;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Team Code</div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <code id="team-code-display" style="background:#070712;border:1px solid #1c1c2c;border-radius:8px;padding:8px 14px;font-size:.8rem;color:#a5b4fc;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${window.getTeamCode ? window.getTeamCode() : '—'}</code>
-          <button id="copy-code-btn" style="background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;">Copy</button>
-        </div>
-        <div style="font-size:.75rem;color:#6868a0;margin-top:6px;">Share this code with your players so they can join.</div>
-      </div>
+  const drawer = document.createElement('div');
+  drawer.id = 'settings-drawer';
+  drawer.innerHTML = `
+    <div class="settings-drawer-header">
+      <span class="settings-drawer-title">Player Access</span>
+      <button id="settings-close" aria-label="Close">&times;</button>
+    </div>
 
-      <div style="height:1px;background:#1c1c2c;margin-bottom:20px;"></div>
+    <div class="settings-section-label">Team Code</div>
+    <div class="settings-code-row">
+      <code id="team-code-display">${window.getTeamCode ? window.getTeamCode() : '—'}</code>
+      <button id="copy-code-btn">Copy</button>
+    </div>
+    <div class="settings-hint">Share this code with your players so they can join.</div>
 
-      <div style="font-size:.8rem;color:#6868a0;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">What players can see</div>
-      <div id="perm-toggles" style="display:flex;flex-direction:column;gap:12px;"></div>
-      <div id="perm-status" style="font-size:.8rem;color:#16a34a;margin-top:14px;min-height:18px;"></div>
-    </div>`;
-  content.appendChild(section);
+    <div class="settings-divider"></div>
 
-  // Copy button
+    <div class="settings-section-label">What players can see</div>
+    <div id="perm-toggles"></div>
+    <div id="perm-status"></div>`;
+  document.body.appendChild(drawer);
+
+  // Open / close
+  function openDrawer()  { drawer.classList.add('open'); backdrop.classList.add('open'); }
+  function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); }
+
+  settingsBtn.addEventListener('click', openDrawer);
+  document.getElementById('settings-close').addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+
+  // Copy code
   document.getElementById('copy-code-btn').addEventListener('click', () => {
     const code = window.getTeamCode ? window.getTeamCode() : '';
     navigator.clipboard.writeText(code).then(() => {
@@ -125,8 +147,7 @@ function injectCoachPanel() {
     });
   });
 
-  // Permission toggles — fetch current permissions from Firestore snapshot
-  // We read them from the user profile via DB_READY which already resolved
+  // Permission toggles
   const LABELS = {
     players:   'Players',
     exercises: 'Exercises',
@@ -136,7 +157,6 @@ function injectCoachPanel() {
     cards:     'Your Card',
   };
 
-  // Load current permissions from Firestore
   const uid = window.APP_COACH_UID;
   firebase.firestore().collection('users').doc(uid).get().then((snap) => {
     const perms = (snap.exists && snap.data().playerPermissions) ||
@@ -145,35 +165,37 @@ function injectCoachPanel() {
     const container = document.getElementById('perm-toggles');
     Object.entries(LABELS).forEach(([key, label]) => {
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+      row.className = 'perm-row';
+      const on = !!perms[key];
       row.innerHTML = `
-        <span style="font-size:.9rem;color:#e2e4f0;">${label}</span>
-        <label style="display:flex;align-items:center;cursor:pointer;gap:8px;">
-          <span class="perm-state-label" style="font-size:.75rem;color:#6868a0;">${perms[key] ? 'Visible' : 'Hidden'}</span>
-          <div style="position:relative;width:40px;height:22px;">
-            <input type="checkbox" data-perm="${key}" ${perms[key] ? 'checked' : ''}
-              style="opacity:0;width:0;height:0;position:absolute;" />
-            <div class="toggle-track" style="position:absolute;inset:0;border-radius:11px;background:${perms[key] ? '#16a34a' : '#334155'};transition:background .2s;"></div>
-            <div class="toggle-thumb" style="position:absolute;top:3px;left:${perms[key] ? '21px' : '3px'};width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;"></div>
+        <span class="perm-label">${label}</span>
+        <label class="toggle-wrap">
+          <span class="perm-state">${on ? 'Visible' : 'Hidden'}</span>
+          <div class="toggle-shell">
+            <input type="checkbox" data-perm="${key}" ${on ? 'checked' : ''}/>
+            <div class="toggle-track" style="background:${on ? '#16a34a' : '#334155'}"></div>
+            <div class="toggle-thumb" style="left:${on ? '21px' : '3px'}"></div>
           </div>
         </label>`;
       container.appendChild(row);
 
-      const checkbox = row.querySelector('input[type=checkbox]');
-      const track    = row.querySelector('.toggle-track');
-      const thumb    = row.querySelector('.toggle-thumb');
-      const stateLabel = row.querySelector('.perm-state-label');
+      const cb    = row.querySelector('input');
+      const track = row.querySelector('.toggle-track');
+      const thumb = row.querySelector('.toggle-thumb');
+      const state = row.querySelector('.perm-state');
 
-      checkbox.addEventListener('change', async () => {
-        const checked = checkbox.checked;
+      cb.addEventListener('change', async () => {
+        const checked = cb.checked;
         track.style.background = checked ? '#16a34a' : '#334155';
         thumb.style.left = checked ? '21px' : '3px';
-        stateLabel.textContent = checked ? 'Visible' : 'Hidden';
+        state.textContent = checked ? 'Visible' : 'Hidden';
         perms[key] = checked;
         const status = document.getElementById('perm-status');
         status.textContent = 'Saving…';
+        status.style.color = '#6868a0';
         await window.savePlayerPermissions({ ...perms });
         status.textContent = 'Saved';
+        status.style.color = '#16a34a';
         setTimeout(() => { status.textContent = ''; }, 2000);
       });
     });
