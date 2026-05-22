@@ -183,6 +183,10 @@ if (!player) {
   buildAttrHistory();
   buildStats();
 
+  window.DB_READY.then(() => {
+    if (window.APP_ROLE === 'player') applyPlayerSections(window.APP_PERMISSIONS);
+  });
+
   document.getElementById('modalCancel').addEventListener('click', closeAttrModal);
   document.getElementById('modalSave').addEventListener('click', () => {
     const dateStr = document.getElementById('modalDate').value;
@@ -828,4 +832,18 @@ function drawChart(canvas, entries, statKey) {
     ctx.fillText(label, 0, 0);
     ctx.restore();
   });
+}
+
+// ── Player section visibility ──
+function applyPlayerSections(permissions) {
+  const s = (permissions && permissions.playerSections) || {};
+  const hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+
+  if (s.attributes === false) {
+    hide('playerAttrsGrid');
+    hide('playerNotesSection');
+  }
+  if (s.categoryProgression === false) hide('categoryProgressionSection');
+  if (s.gameStats === false)            hide('gameStatsSection');
+  if (s.statProgression === false)      hide('progressionSection');
 }
