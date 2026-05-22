@@ -51,7 +51,8 @@ if (!team) {
   navigate('goToPlays',     'plays.html?id='     + teamId);
   navigate('goToStats',     'stats.html?id='     + teamId);
   navigate('goToPoints',    'points.html?id='    + teamId);
-  document.getElementById('goToCards').href = 'cards.html?id=' + teamId;
+  document.getElementById('goToCards').href     = 'cards.html?id='     + teamId;
+  document.getElementById('goToBlackbox').href  = 'blackbox.html?id='  + teamId;
 
   // ── Apply role-based UI after DB is ready ─────────────────────────────────
   window.DB_READY.then(() => {
@@ -59,8 +60,24 @@ if (!team) {
       applyPlayerPermissions(window.APP_PERMISSIONS || {});
     } else if (window.APP_ROLE === 'coach') {
       injectCoachPanel();
+      loadBlackboxCount();
     }
   });
+
+  function loadBlackboxCount() {
+    const uid = window.APP_COACH_UID;
+    if (!uid) return;
+    firebase.firestore()
+      .collection('blackbox').doc(uid).collection('notes')
+      .get()
+      .then((snap) => {
+        const meta = document.getElementById('blackboxMeta');
+        if (!meta) return;
+        const n = snap.size;
+        meta.textContent = n === 0 ? 'no notes yet' : n === 1 ? '1 note' : n + ' notes';
+      })
+      .catch(() => {});
+  }
 }
 
 // ── Player: hide categories they can't access ──────────────────────────────
@@ -71,6 +88,7 @@ const PERM_MAP = {
   stats:     'goToStats',
   points:    'goToPoints',
   cards:     'goToCards',
+  blackbox:  'goToBlackbox',
 };
 
 function applyPlayerPermissions(permissions) {
@@ -155,6 +173,7 @@ function injectCoachPanel() {
     { key: 'stats',     label: 'Games' },
     { key: 'points',    label: 'Points' },
     { key: 'cards',     label: 'Your Card' },
+    { key: 'blackbox',  label: 'BlackBox' },
   ];
 
   const SECTION_LABELS = [
