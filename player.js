@@ -272,20 +272,26 @@ function addManualEntry(attr, dateStr, value) {
 }
 
 function deleteAttrEntry(attr, isoDate) {
+  panelLocked = true;
+
   const all = loadTeams();
   const t   = all.find((x) => x.id === teamId);
   const p   = t && (t.players || []).find((x) => x.id === playerId);
-  if (!p || !p.attrHistory) return;
+  if (!p || !p.attrHistory) { panelLocked = false; return; }
 
   const idx = p.attrHistory.findIndex((e) => e.attr === attr && e.date === isoDate);
-  if (idx === -1) return;
+  if (idx === -1) { panelLocked = false; return; }
   p.attrHistory.splice(idx, 1);
   saveTeams(all);
   player.attrHistory = p.attrHistory;
 
   const panel = document.getElementById('attr-chart-' + attr);
-  if (panel) renderAttrChart(panel, attr);
+  if (panel) {
+    renderAttrChart(panel, attr);
+    panel.classList.add('attr-chart-visible');
+  }
   refreshAttrHistory();
+  setTimeout(() => { panelLocked = false; }, 100);
 }
 
 function drawAttrChart(canvas, points) {
