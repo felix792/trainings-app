@@ -1003,6 +1003,71 @@ canvas {
 
 #statChart { display: block; }
 
+/* ── Attribute History ── */
+.ah-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.ah-entry:last-child { border-bottom: none; }
+.ah-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.ah-label {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+.ah-date {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+.ah-change {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.ah-from { color: var(--text-muted); }
+.ah-arrow { color: var(--text-muted); font-size: 0.75rem; }
+.ah-arrow.ah-up  { color: #22c55e; }
+.ah-arrow.ah-down{ color: #ef4444; }
+.ah-to           { font-weight: 700; }
+.ah-to.ah-up     { color: #22c55e; }
+.ah-to.ah-down   { color: #ef4444; }
+
+/* ── Attr inline chart (hover to expand) ── */
+.attr-chart-panel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease, padding-top 0.25s ease;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.attr-chart-panel.attr-chart-visible {
+  max-height: 500px;
+  opacity: 1;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.attr-chart-list { margin-top: 10px; }
+.attr-chart-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 6px 0;
+  margin: 0;
+}
+
 /* ── Points table ── */
 .points-board {
   display: flex;
