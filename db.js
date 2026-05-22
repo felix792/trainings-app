@@ -126,7 +126,10 @@
       showOverlay('<div style="color:#94a3b8;">Setting up coach account…</div>');
       await saveProfile(user.uid, {
         role: 'coach',
-        playerPermissions: { players: true, exercises: true, plays: true, stats: true, points: true, cards: true }
+        playerPermissions: {
+          players: true, exercises: true, plays: true, stats: true, points: true, cards: true,
+          playerSections: { attributes: true, categoryProgression: true, gameStats: true, statProgression: true }
+        }
       });
       continueAsCoach(user);
     });
