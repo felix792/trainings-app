@@ -1,6 +1,9 @@
 const STORAGE_KEY = 'football_coach_teams';
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
 const RATINGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+let panelLocked = false;
+let modalAttr    = null;
+
 const ATTR_LABELS = {
   defensiveAbility: 'Defensive Ability',
   shot:             'Shot',
@@ -73,6 +76,18 @@ if (!player) {
   buildNotes();
   buildAttrHistory();
   buildStats();
+
+  document.getElementById('modalCancel').addEventListener('click', closeAttrModal);
+  document.getElementById('modalSave').addEventListener('click', () => {
+    const dateStr = document.getElementById('modalDate').value;
+    const val     = parseInt(document.getElementById('modalValue').value, 10);
+    if (!dateStr || isNaN(val) || val < 0 || val > 10) return;
+    addManualEntry(modalAttr, dateStr, val);
+    closeAttrModal();
+  });
+  document.getElementById('attrEntryModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeAttrModal();
+  });
 }
 
 // ── Persist helper ──
@@ -152,17 +167,31 @@ function buildRatings() {
       chartPanel.classList.add('attr-chart-visible');
     });
     card.addEventListener('mouseleave', () => {
-      chartPanel.classList.remove('attr-chart-visible');
+      if (!panelLocked) chartPanel.classList.remove('attr-chart-visible');
     });
   });
 }
 
 function renderAttrChart(panel, attr) {
-  const history = (player.attrHistory || []).filter((e) => e.attr === attr);
+  const history = (player.attrHistory || [])
+    .filter((e) => e.attr === attr)
+    .sort((a, b) => a.date.localeCompare(b.date));
   panel.innerHTML = '';
 
+  const header = document.createElement('div');
+  header.className = 'attr-chart-header';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'attr-chart-add-btn';
+  addBtn.textContent = '+ Add entry';
+  addBtn.addEventListener('click', (e) => { e.stopPropagation(); openAddEntryModal(attr); });
+  header.appendChild(addBtn);
+  panel.appendChild(header);
+
   if (history.length === 0) {
-    panel.innerHTML = '<p class="attr-chart-empty">No changes recorded yet.</p>';
+    const empty = document.createElement('p');
+    empty.className = 'attr-chart-empty';
+    empty.textContent = 'No changes recorded yet.';
+    panel.appendChild(empty);
     return;
   }
 
@@ -184,16 +213,79 @@ function renderAttrChart(panel, attr) {
     const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '→';
     const row = document.createElement('div');
     row.className = 'ah-entry';
+    const label = entry.manual ? `<span class="ah-manual">manual</span>` : '';
     row.innerHTML = `
-      <span class="ah-date">${formatDateTime(entry.date)}</span>
+      <span class="ah-date">${formatDateTime(entry.date)} ${label}</span>
       <div class="ah-change">
-        <span class="ah-from">${entry.from || '—'}</span>
+        <span class="ah-from">${entry.from !== null && entry.from !== undefined ? entry.from : '—'}</span>
         <span class="ah-arrow ${cls}">${arrow}</span>
         <span class="ah-to ${cls}">${entry.to || '—'}</span>
       </div>`;
+    const delBtn = document.createElement('button');
+    delBtn.className = 'attr-chart-del-btn';
+    delBtn.textContent = 'x';
+    delBtn.addEventListener('click', () => deleteAttrEntry(attr, entry.date));
+    row.appendChild(delBtn);
     list.appendChild(row);
   });
   panel.appendChild(list);
+}
+
+// ── Manual entry modal ──
+function openAddEntryModal(attr) {
+  modalAttr    = attr;
+  panelLocked  = true;
+  const today  = new Date().toISOString().split('T')[0];
+  document.getElementById('modalDate').value  = today;
+  document.getElementById('modalValue').value = player.attrs[attr] || '';
+  document.getElementById('modalAttrName').textContent = ATTR_LABELS[attr] || attr;
+  document.getElementById('attrEntryModal').classList.add('modal-open');
+}
+
+function closeAttrModal() {
+  document.getElementById('attrEntryModal').classList.remove('modal-open');
+  panelLocked = false;
+  modalAttr   = null;
+}
+
+function addManualEntry(attr, dateStr, value) {
+  const all = loadTeams();
+  const t   = all.find((x) => x.id === teamId);
+  const p   = t && (t.players || []).find((x) => x.id === playerId);
+  if (!p) return;
+  if (!p.attrHistory) p.attrHistory = [];
+
+  const isoDate = new Date(dateStr + 'T12:00:00').toISOString();
+  const sorted  = p.attrHistory.filter((e) => e.attr === attr).sort((a, b) => a.date.localeCompare(b.date));
+  let fromValue = p.attrs[attr] || 0;
+  for (const e of sorted) {
+    if (e.date <= isoDate) fromValue = e.to;
+  }
+
+  p.attrHistory.push({ date: isoDate, attr, from: fromValue, to: value, manual: true });
+  saveTeams(all);
+  player.attrHistory = p.attrHistory;
+
+  const panel = document.getElementById('attr-chart-' + attr);
+  if (panel) renderAttrChart(panel, attr);
+  refreshAttrHistory();
+}
+
+function deleteAttrEntry(attr, isoDate) {
+  const all = loadTeams();
+  const t   = all.find((x) => x.id === teamId);
+  const p   = t && (t.players || []).find((x) => x.id === playerId);
+  if (!p || !p.attrHistory) return;
+
+  const idx = p.attrHistory.findIndex((e) => e.attr === attr && e.date === isoDate);
+  if (idx === -1) return;
+  p.attrHistory.splice(idx, 1);
+  saveTeams(all);
+  player.attrHistory = p.attrHistory;
+
+  const panel = document.getElementById('attr-chart-' + attr);
+  if (panel) renderAttrChart(panel, attr);
+  refreshAttrHistory();
 }
 
 function drawAttrChart(canvas, points) {
