@@ -148,56 +148,90 @@ function injectCoachPanel() {
   });
 
   // Permission toggles
-  const LABELS = {
-    players:   'Players',
-    exercises: 'Exercises',
-    plays:     'Plays',
-    stats:     'Stats',
-    points:    'Points',
-    cards:     'Your Card',
-  };
+  const TOP_LABELS = [
+    { key: 'players',   label: 'Players' },
+    { key: 'exercises', label: 'Exercises' },
+    { key: 'plays',     label: 'Plays' },
+    { key: 'stats',     label: 'Stats' },
+    { key: 'points',    label: 'Points' },
+    { key: 'cards',     label: 'Your Card' },
+  ];
+
+  const SECTION_LABELS = [
+    { key: 'attributes',          label: 'Attributes & Profile' },
+    { key: 'categoryProgression', label: 'Category Progression' },
+    { key: 'gameStats',           label: 'Game Stats' },
+    { key: 'statProgression',     label: 'Stat Progression' },
+  ];
 
   const uid = window.APP_COACH_UID;
   firebase.firestore().collection('users').doc(uid).get().then((snap) => {
-    const perms = (snap.exists && snap.data().playerPermissions) ||
+    const data  = snap.exists ? snap.data() : {};
+    const perms = data.playerPermissions ||
       { players: true, exercises: true, plays: true, stats: true, points: true, cards: true };
+    const sections = perms.playerSections ||
+      { attributes: true, categoryProgression: true, gameStats: true, statProgression: true };
+    perms.playerSections = sections;
 
     const container = document.getElementById('perm-toggles');
-    Object.entries(LABELS).forEach(([key, label]) => {
+
+    async function persist() {
+      const status = document.getElementById('perm-status');
+      status.textContent = 'Saving…';
+      status.style.color = '#6868a0';
+      await window.savePlayerPermissions({ ...perms });
+      status.textContent = 'Saved';
+      status.style.color = '#16a34a';
+      setTimeout(() => { status.textContent = ''; }, 2000);
+    }
+
+    function makeToggle(key, label, value, onChange, indent) {
       const row = document.createElement('div');
-      row.className = 'perm-row';
-      const on = !!perms[key];
+      row.className = 'perm-row' + (indent ? ' perm-row-sub' : '');
+      const on = !!value;
       row.innerHTML = `
-        <span class="perm-label">${label}</span>
+        <span class="perm-label${indent ? ' perm-label-sub' : ''}">${label}</span>
         <label class="toggle-wrap">
           <span class="perm-state">${on ? 'Visible' : 'Hidden'}</span>
           <div class="toggle-shell">
-            <input type="checkbox" data-perm="${key}" ${on ? 'checked' : ''}/>
+            <input type="checkbox" ${on ? 'checked' : ''}/>
             <div class="toggle-track" style="background:${on ? '#16a34a' : '#334155'}"></div>
             <div class="toggle-thumb" style="left:${on ? '21px' : '3px'}"></div>
           </div>
         </label>`;
-      container.appendChild(row);
-
       const cb    = row.querySelector('input');
       const track = row.querySelector('.toggle-track');
       const thumb = row.querySelector('.toggle-thumb');
       const state = row.querySelector('.perm-state');
-
       cb.addEventListener('change', async () => {
         const checked = cb.checked;
         track.style.background = checked ? '#16a34a' : '#334155';
         thumb.style.left = checked ? '21px' : '3px';
         state.textContent = checked ? 'Visible' : 'Hidden';
-        perms[key] = checked;
-        const status = document.getElementById('perm-status');
-        status.textContent = 'Saving…';
-        status.style.color = '#6868a0';
-        await window.savePlayerPermissions({ ...perms });
-        status.textContent = 'Saved';
-        status.style.color = '#16a34a';
-        setTimeout(() => { status.textContent = ''; }, 2000);
+        onChange(checked);
+        await persist();
       });
+      return row;
+    }
+
+    TOP_LABELS.forEach(({ key, label }) => {
+      container.appendChild(makeToggle(key, label, perms[key], (v) => { perms[key] = v; }, false));
+
+      if (key === 'players') {
+        const subWrap = document.createElement('div');
+        subWrap.id = 'player-sections-wrap';
+        subWrap.style.display = perms.players ? 'block' : 'none';
+        SECTION_LABELS.forEach(({ key: sk, label: sl }) => {
+          subWrap.appendChild(makeToggle(sk, sl, sections[sk], (v) => { sections[sk] = v; }, true));
+        });
+        container.appendChild(subWrap);
+
+        // Show/hide sub-section when Players toggle changes
+        const playersRow = container.lastElementChild.previousElementSibling;
+        playersRow.querySelector('input').addEventListener('change', (e) => {
+          subWrap.style.display = e.target.checked ? 'block' : 'none';
+        });
+      }
     });
   });
 }
