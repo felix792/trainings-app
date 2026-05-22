@@ -894,6 +894,109 @@ canvas {
 /* ── Player profile stats ── */
 .player-stats-section { margin-top: 40px; }
 
+/* ── BlackBox ── */
+.bb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.bb-empty p { font-size: .95rem; font-weight: 600; color: var(--text); margin: 0; }
+.bb-empty span { font-size: .82rem; }
+
+.bb-note-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.bb-note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+.bb-anon-badge {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #a5b4fc;
+  background: #1e1b4b;
+  border: 1px solid #3730a3;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.bb-note-time {
+  font-size: .75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.bb-note-text {
+  font-size: .92rem;
+  color: var(--text);
+  line-height: 1.55;
+  margin: 0 0 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.bb-delete-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  color: var(--text-muted);
+  font-size: .75rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.bb-delete-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+.bb-submit-wrap { max-width: 560px; padding-bottom: 40px; }
+.bb-anon-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #1e1b4b;
+  border: 1px solid #3730a3;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: .83rem;
+  color: #a5b4fc;
+  margin-bottom: 20px;
+  line-height: 1.45;
+}
+.bb-anon-notice svg { flex-shrink: 0; margin-top: 1px; }
+.bb-textarea {
+  width: 100%;
+  min-height: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: .95rem;
+  font-family: inherit;
+  padding: 14px 16px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s;
+}
+.bb-textarea:focus { border-color: var(--green); }
+.bb-char-count {
+  font-size: .75rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin: 6px 0 16px;
+}
+.bb-submit-btn { width: 100%; }
+.bb-status-ok    { margin-top: 12px; font-size: .85rem; color: #16a34a; }
+.bb-status-error { margin-top: 12px; font-size: .85rem; color: #ef4444; }
+
 /* ── Settings button ── */
 #settings-btn {
   background: transparent;
