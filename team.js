@@ -152,7 +152,7 @@ function injectCoachPanel() {
     { key: 'players',   label: 'Players' },
     { key: 'exercises', label: 'Exercises' },
     { key: 'plays',     label: 'Plays' },
-    { key: 'stats',     label: 'Stats' },
+    { key: 'stats',     label: 'Games' },
     { key: 'points',    label: 'Points' },
     { key: 'cards',     label: 'Your Card' },
   ];
