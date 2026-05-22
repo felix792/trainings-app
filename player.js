@@ -182,7 +182,6 @@ if (!player) {
   buildNotes();
   buildAttrHistory();
   buildStats();
-  buildCard();
 
   document.getElementById('modalCancel').addEventListener('click', closeAttrModal);
   document.getElementById('modalSave').addEventListener('click', () => {
@@ -222,7 +221,6 @@ function saveAttr(key, value) {
   Object.assign(player.attrs, { [key]: value });
   player.attrHistory = p.attrHistory;
   refreshAttrHistory();
-  buildCard();
   const openPanel = document.getElementById('attr-chart-' + key);
   if (openPanel && openPanel.classList.contains('attr-chart-visible')) {
     renderAttrChart(openPanel, key);
