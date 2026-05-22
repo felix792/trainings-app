@@ -1026,7 +1026,12 @@ canvas {
   padding: 10px 20px;
   border-bottom: 1px solid #0f0f1e;
 }
+.perm-row-sub {
+  padding-left: 36px;
+  background: #070712;
+}
 .perm-label { font-size: .9rem; color: var(--text); }
+.perm-label-sub { font-size: .82rem; color: var(--text-muted); }
 .toggle-wrap {
   display: flex;
   align-items: center;
