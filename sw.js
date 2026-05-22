@@ -1,4 +1,4 @@
-const CACHE = 'fc-coach-v3';
+const CACHE = 'playvision-v1';
 const ASSETS = [
   '/trainings-app/',
   '/trainings-app/index.html',
@@ -27,7 +27,8 @@ const ASSETS = [
   '/trainings-app/icon-192.png',
   '/trainings-app/icon-512.png',
   '/trainings-app/firebase-config.js',
-  '/trainings-app/db.js'
+  '/trainings-app/db.js',
+  '/trainings-app/manifest.json'
 ];
 
 self.addEventListener('install', e => {
