@@ -1,6 +1,20 @@
 const STORAGE_KEY = 'football_coach_teams';
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
 const RATINGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const ATTR_LABELS = {
+  defensiveAbility: 'Defensive Ability',
+  shot:             'Shot',
+  condition:        'Condition',
+  touch:            'Touch',
+  awareness:        'Awareness',
+  oneVsOneDefensive:'1v1 Defensive',
+  oneVsOneOffensive:'1v1 Offensive',
+  moral:            'Moral',
+  speed:            'Speed',
+  physicalAbility:  'Physical Ability',
+  positions:        'Positions',
+  strongFoot:       'Strong Foot',
+};
 const CHART_STATS = [
   { key: 'goals',          label: 'Goals' },
   { key: 'assists',        label: 'Assists' },
@@ -57,6 +71,7 @@ if (!player) {
   buildPositions();
   buildStrongFoot();
   buildNotes();
+  buildAttrHistory();
   buildStats();
 }
 
@@ -67,9 +82,28 @@ function saveAttr(key, value) {
   const p   = t && (t.players || []).find((x) => x.id === playerId);
   if (!p) return;
   if (!p.attrs) p.attrs = {};
+  if (!p.attrHistory) p.attrHistory = [];
+
+  if (key !== 'notes') {
+    const old = p.attrs[key] !== undefined ? p.attrs[key] : null;
+    const isArr = Array.isArray(old) || Array.isArray(value);
+    const changed = isArr
+      ? JSON.stringify([...(old || [])].sort()) !== JSON.stringify([...(value || [])].sort())
+      : old !== value;
+    if (changed) {
+      p.attrHistory.push({ date: new Date().toISOString(), attr: key, from: old, to: value });
+    }
+  }
+
   p.attrs[key] = value;
   saveTeams(all);
   Object.assign(player.attrs, { [key]: value });
+  player.attrHistory = p.attrHistory;
+  refreshAttrHistory();
+  const openPanel = document.getElementById('attr-chart-' + key);
+  if (openPanel && openPanel.classList.contains('attr-chart-visible')) {
+    renderAttrChart(openPanel, key);
+  }
 }
 
 // ── Strong foot ──
@@ -92,6 +126,7 @@ function buildRatings() {
   document.querySelectorAll('.rating-row').forEach((row) => {
     const attr = row.dataset.attr;
     const current = player.attrs[attr] || 0;
+    const card = row.closest('.attr-card');
 
     RATINGS.forEach((n) => {
       const btn = document.createElement('button');
@@ -106,6 +141,139 @@ function buildRatings() {
     });
 
     refreshRatingRow(row, attr);
+
+    const chartPanel = document.createElement('div');
+    chartPanel.className = 'attr-chart-panel';
+    chartPanel.id = 'attr-chart-' + attr;
+    card.appendChild(chartPanel);
+
+    card.addEventListener('mouseenter', () => {
+      renderAttrChart(chartPanel, attr);
+      chartPanel.classList.add('attr-chart-visible');
+    });
+    card.addEventListener('mouseleave', () => {
+      chartPanel.classList.remove('attr-chart-visible');
+    });
+  });
+}
+
+function renderAttrChart(panel, attr) {
+  const history = (player.attrHistory || []).filter((e) => e.attr === attr);
+  panel.innerHTML = '';
+
+  if (history.length === 0) {
+    panel.innerHTML = '<p class="attr-chart-empty">No changes recorded yet.</p>';
+    return;
+  }
+
+  const points = [];
+  if (history[0].from !== null && history[0].from !== undefined) {
+    points.push({ label: 'Start', date: null, value: history[0].from || 0 });
+  }
+  history.forEach((e) => points.push({ label: null, date: e.date, value: e.to || 0 }));
+
+  const canvas = document.createElement('canvas');
+  panel.appendChild(canvas);
+  drawAttrChart(canvas, points);
+
+  const list = document.createElement('div');
+  list.className = 'attr-chart-list';
+  [...history].reverse().forEach((entry) => {
+    const diff  = (entry.to || 0) - (entry.from || 0);
+    const cls   = diff > 0 ? 'ah-up' : diff < 0 ? 'ah-down' : '';
+    const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '→';
+    const row = document.createElement('div');
+    row.className = 'ah-entry';
+    row.innerHTML = `
+      <span class="ah-date">${formatDateTime(entry.date)}</span>
+      <div class="ah-change">
+        <span class="ah-from">${entry.from || '—'}</span>
+        <span class="ah-arrow ${cls}">${arrow}</span>
+        <span class="ah-to ${cls}">${entry.to || '—'}</span>
+      </div>`;
+    list.appendChild(row);
+  });
+  panel.appendChild(list);
+}
+
+function drawAttrChart(canvas, points) {
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.parentElement.clientWidth || 300;
+  const H   = 160;
+
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = { top: 20, right: 16, bottom: 44, left: 32 };
+  const cW  = W - pad.left - pad.right;
+  const cH  = H - pad.top  - pad.bottom;
+
+  ctx.fillStyle = '#070712';
+  ctx.fillRect(0, 0, W, H);
+
+  const maxVal = 10;
+  for (let i = 0; i <= 5; i++) {
+    const y   = pad.top + cH - (i / 5) * cH;
+    const val = Math.round((i / 5) * maxVal);
+    ctx.strokeStyle = '#1c1c2c';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
+    ctx.fillStyle  = '#6868a0';
+    ctx.font       = '10px system-ui, sans-serif';
+    ctx.textAlign  = 'right';
+    ctx.fillText(val, pad.left - 5, y + 4);
+  }
+
+  const xOf = (i) => points.length === 1
+    ? pad.left + cW / 2
+    : pad.left + (i / (points.length - 1)) * cW;
+  const yOf = (v) => pad.top + cH - (v / maxVal) * cH;
+
+  if (points.length > 1) {
+    ctx.beginPath();
+    points.forEach((pt, i) => { i === 0 ? ctx.moveTo(xOf(i), yOf(pt.value)) : ctx.lineTo(xOf(i), yOf(pt.value)); });
+    ctx.lineTo(xOf(points.length - 1), pad.top + cH);
+    ctx.lineTo(xOf(0), pad.top + cH);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
+    grad.addColorStop(0, 'rgba(29,78,216,0.3)');
+    grad.addColorStop(1, 'rgba(29,78,216,0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    points.forEach((pt, i) => { i === 0 ? ctx.moveTo(xOf(i), yOf(pt.value)) : ctx.lineTo(xOf(i), yOf(pt.value)); });
+    ctx.strokeStyle = '#1d4ed8';
+    ctx.lineWidth   = 2.5;
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+  }
+
+  points.forEach((pt, i) => {
+    const x = xOf(i), y = yOf(pt.value);
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#1d4ed8'; ctx.fill();
+    ctx.strokeStyle = '#000010'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    ctx.fillStyle = '#e2e4f0';
+    ctx.font      = 'bold 10px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(pt.value, x, y - 9);
+
+    const xLabel = pt.label || (pt.date ? formatDate(pt.date.split('T')[0]) : '');
+    ctx.save();
+    ctx.translate(x, pad.top + cH + 10);
+    ctx.rotate(-Math.PI / 5);
+    ctx.fillStyle = '#6868a0';
+    ctx.font      = '9px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(xLabel, 0, 0);
+    ctx.restore();
   });
 }
 
@@ -134,6 +302,61 @@ function buildNotes() {
       setTimeout(() => { status.textContent = ''; }, 1500);
     }, 600);
   });
+}
+
+// ── Attribute History ──
+function formatDateTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+function buildAttrHistory() {
+  if (!player.attrHistory) player.attrHistory = [];
+  refreshAttrHistory();
+}
+
+function refreshAttrHistory() {
+  const container = document.getElementById('attrHistoryList');
+  const history = player.attrHistory || [];
+
+  if (history.length === 0) {
+    container.innerHTML = '<p class="players-empty">No changes recorded yet.</p>';
+    return;
+  }
+
+  const sorted = [...history].reverse();
+  container.innerHTML = sorted.map((entry) => {
+    const label = ATTR_LABELS[entry.attr] || entry.attr;
+    const dateStr = formatDateTime(entry.date);
+    let changeHtml;
+
+    if (Array.isArray(entry.from) || Array.isArray(entry.to)) {
+      const from = (entry.from || []).join(', ') || '—';
+      const to   = (entry.to   || []).join(', ') || '—';
+      changeHtml = `<span class="ah-from">${escapeHtml(from)}</span><span class="ah-arrow">→</span><span class="ah-to">${escapeHtml(to)}</span>`;
+    } else if (typeof entry.to === 'number' || typeof entry.from === 'number') {
+      const from = entry.from || 0;
+      const to   = entry.to   || 0;
+      const diff = to - from;
+      const cls  = diff > 0 ? 'ah-up' : diff < 0 ? 'ah-down' : '';
+      const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '→';
+      changeHtml = `<span class="ah-from">${from > 0 ? from : '—'}</span><span class="ah-arrow ${cls}">${arrow}</span><span class="ah-to ${cls}">${to > 0 ? to : '—'}</span>`;
+    } else {
+      const from = entry.from !== null && entry.from !== undefined ? entry.from : '—';
+      const to   = entry.to   !== null && entry.to   !== undefined ? entry.to   : '—';
+      changeHtml = `<span class="ah-from">${escapeHtml(String(from))}</span><span class="ah-arrow">→</span><span class="ah-to">${escapeHtml(String(to))}</span>`;
+    }
+
+    return `
+      <div class="ah-entry">
+        <div class="ah-meta">
+          <span class="ah-label">${escapeHtml(label)}</span>
+          <span class="ah-date">${dateStr}</span>
+        </div>
+        <div class="ah-change">${changeHtml}</div>
+      </div>`;
+  }).join('');
 }
 
 // ── Game Stats ──
