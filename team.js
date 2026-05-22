@@ -185,6 +185,32 @@ function injectCoachPanel() {
       setTimeout(() => { status.textContent = ''; }, 2000);
     }
 
+    function showConfirm(label, newValue, onConfirm) {
+      let modal = document.getElementById('perm-confirm-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'perm-confirm-modal';
+        document.body.appendChild(modal);
+      }
+      const action = newValue ? 'show' : 'hide';
+      modal.innerHTML = `
+        <div class="perm-confirm-box">
+          <p class="perm-confirm-msg">Are you sure you want to <strong>${action}</strong> <strong>${label}</strong> for your players?</p>
+          <div class="perm-confirm-btns">
+            <button id="perm-confirm-yes">Yes, apply</button>
+            <button id="perm-confirm-no">Cancel</button>
+          </div>
+        </div>`;
+      modal.classList.add('open');
+      modal.querySelector('#perm-confirm-yes').addEventListener('click', () => {
+        modal.classList.remove('open');
+        onConfirm();
+      });
+      modal.querySelector('#perm-confirm-no').addEventListener('click', () => {
+        modal.classList.remove('open');
+      });
+    }
+
     function makeToggle(key, label, value, onChange, indent) {
       const row = document.createElement('div');
       row.className = 'perm-row' + (indent ? ' perm-row-sub' : '');
@@ -203,34 +229,38 @@ function injectCoachPanel() {
       const track = row.querySelector('.toggle-track');
       const thumb = row.querySelector('.toggle-thumb');
       const state = row.querySelector('.perm-state');
-      cb.addEventListener('change', async () => {
-        const checked = cb.checked;
-        track.style.background = checked ? '#16a34a' : '#334155';
-        thumb.style.left = checked ? '21px' : '3px';
-        state.textContent = checked ? 'Visible' : 'Hidden';
-        onChange(checked);
-        await persist();
+      cb.addEventListener('change', () => {
+        const newValue = cb.checked;
+        cb.checked = !newValue; // revert until confirmed
+        showConfirm(label, newValue, async () => {
+          cb.checked = newValue;
+          track.style.background = newValue ? '#16a34a' : '#334155';
+          thumb.style.left = newValue ? '21px' : '3px';
+          state.textContent = newValue ? 'Visible' : 'Hidden';
+          onChange(newValue);
+          await persist();
+        });
       });
       return row;
     }
 
+    // Build sub-section wrap first so Players onChange can reference it
+    const subWrap = document.createElement('div');
+    subWrap.id = 'player-sections-wrap';
+    subWrap.style.display = perms.players ? 'block' : 'none';
+    SECTION_LABELS.forEach(({ key: sk, label: sl }) => {
+      subWrap.appendChild(makeToggle(sk, sl, sections[sk], (v) => { sections[sk] = v; }, true));
+    });
+
     TOP_LABELS.forEach(({ key, label }) => {
-      container.appendChild(makeToggle(key, label, perms[key], (v) => { perms[key] = v; }, false));
-
       if (key === 'players') {
-        const subWrap = document.createElement('div');
-        subWrap.id = 'player-sections-wrap';
-        subWrap.style.display = perms.players ? 'block' : 'none';
-        SECTION_LABELS.forEach(({ key: sk, label: sl }) => {
-          subWrap.appendChild(makeToggle(sk, sl, sections[sk], (v) => { sections[sk] = v; }, true));
-        });
+        container.appendChild(makeToggle(key, label, perms[key], (v) => {
+          perms[key] = v;
+          subWrap.style.display = v ? 'block' : 'none';
+        }, false));
         container.appendChild(subWrap);
-
-        // Show/hide sub-section when Players toggle changes
-        const playersRow = container.lastElementChild.previousElementSibling;
-        playersRow.querySelector('input').addEventListener('change', (e) => {
-          subWrap.style.display = e.target.checked ? 'block' : 'none';
-        });
+      } else {
+        container.appendChild(makeToggle(key, label, perms[key], (v) => { perms[key] = v; }, false));
       }
     });
   });
