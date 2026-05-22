@@ -1,6 +1,6 @@
 {
-  "name": "Football Coach",
-  "short_name": "FC Coach",
+  "name": "PlayVision",
+  "short_name": "PlayVision",
   "description": "Manage your football teams, players, training sessions and stats.",
   "start_url": "/trainings-app/",
   "scope": "/trainings-app/",
