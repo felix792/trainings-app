@@ -1,8 +1,9 @@
-const CACHE = 'tactiq-v14';
+const CACHE = 'tactiq-v15';
 const ASSETS = [
   '/trainings-app/',
   '/trainings-app/index.html',
   '/trainings-app/team.html',
+  '/trainings-app/settings.html',
   '/trainings-app/players.html',
   '/trainings-app/player.html',
   '/trainings-app/exercises.html',
@@ -17,6 +18,7 @@ const ASSETS = [
   '/trainings-app/styles.css',
   '/trainings-app/app.js',
   '/trainings-app/team.js',
+  '/trainings-app/settings.js',
   '/trainings-app/players.js',
   '/trainings-app/player.js',
   '/trainings-app/exercises.js',
