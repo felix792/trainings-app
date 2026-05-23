@@ -6,19 +6,29 @@
   let syncTimer  = null;
   let cloudReady = false;
   let resolveReady;
-  window.DB_READY      = new Promise((r) => { resolveReady = r; });
-  window.APP_ROLE        = null;   // 'coach' | 'player'
-  window.APP_PERMISSIONS = null;   // { players, exercises, plays, stats, points, cards }
-  window.APP_COACH_UID   = null;
+  window.DB_READY        = new Promise((r) => { resolveReady = r; });
+  window.APP_ROLE        = null;   // 'head-coach' | 'assistant-coach' | 'player'
+  window.APP_PERMISSIONS = null;
+  window.APP_OWNER_UID   = null;   // head-coach's UID where team data lives
+
+  // Backward-compat alias so pages that still reference APP_COACH_UID work
+  Object.defineProperty(window, 'APP_COACH_UID', {
+    get() { return window.APP_OWNER_UID; },
+    configurable: true
+  });
 
   const origSet = localStorage.setItem.bind(localStorage);
   localStorage.setItem = function (key, value) {
     origSet(key, value);
-    if (key === STORAGE_KEY && cloudReady && window.APP_ROLE === 'coach') {
+    if (key === STORAGE_KEY && cloudReady && window.APP_ROLE !== 'player') {
       clearTimeout(syncTimer);
       syncTimer = setTimeout(() => syncUp(value), 1500);
     }
   };
+
+  function escHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
   // ── Overlay ──────────────────────────────────────────────────────────────────
   function showOverlay(html) {
@@ -44,10 +54,14 @@
   function userDoc(uid) {
     return firebase.firestore().collection('users').doc(uid);
   }
+  function inviteDoc(code) {
+    return firebase.firestore().collection('invites').doc(code.toUpperCase());
+  }
   async function syncUp(teamsJson) {
     const user = firebase.auth().currentUser;
-    if (!user || window.APP_ROLE !== 'coach') return;
-    userDoc(user.uid).set({ teams: teamsJson, updatedAt: Date.now() }, { merge: true }).catch(() => {});
+    if (!user || window.APP_ROLE === 'player') return;
+    const ownerUid = window.APP_OWNER_UID || user.uid;
+    userDoc(ownerUid).set({ teams: teamsJson, updatedAt: Date.now() }, { merge: true }).catch(() => {});
   }
   async function syncDown(uid) {
     try {
@@ -65,18 +79,29 @@
     return userDoc(uid).set(data, { merge: true });
   }
 
-  // ── User badge ───────────────────────────────────────────────────────────────
-  function injectUserBadge(user, role) {
+  // ── Generate 6-char invite code ──────────────────────────────────────────────
+  function genCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
+  // ── User / team-switcher button ───────────────────────────────────────────────
+  function injectUserBadge(user, role, teamName, memberships) {
     const header = document.querySelector('.header-inner');
     if (!header || document.getElementById('db-user-btn')) return;
     const btn = document.createElement('button');
     btn.id = 'db-user-btn';
-    btn.title = (role === 'coach' ? 'Coach' : 'Player') + ' — ' + user.email + '\nClick to sign out';
-    btn.style.cssText = 'background:transparent;border:1px solid #334155;color:#94a3b8;border-radius:7px;padding:5px 10px;font-size:.75rem;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-    btn.textContent = (role === 'coach' ? 'Coach · ' : 'Player · ') +
-      (user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0]);
+    const roleLabel = role === 'head-coach' ? 'Head Coach' : role === 'assistant-coach' ? 'Asst. Coach' : 'Player';
+    const multiTeam = memberships && memberships.length > 1;
+    btn.title = roleLabel + ' — ' + user.email + (multiTeam ? '\nClick to switch team' : '\nClick to sign out');
+    btn.style.cssText = 'background:transparent;border:1px solid #334155;color:#94a3b8;border-radius:7px;padding:5px 10px;font-size:.75rem;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px';
+    btn.textContent = (teamName ? teamName + ' · ' : '') + roleLabel;
     btn.addEventListener('click', () => {
-      if (confirm('Sign out of TactIQ?')) firebase.auth().signOut();
+      if (multiTeam) {
+        showMembershipSelector(user, memberships, true);
+      } else {
+        if (confirm('Sign out of TactIQ?')) firebase.auth().signOut();
+      }
     });
     header.appendChild(btn);
   }
@@ -102,112 +127,222 @@
     });
   }
 
-  // ── Role selection screen ────────────────────────────────────────────────────
-  function showRoleSelection(user) {
+  // ── Welcome screen (no memberships) ─────────────────────────────────────────
+  function showWelcomeScreen(user) {
     showOverlay(`
       <div style="text-align:center;max-width:380px;width:100%;">
         <div style="font-size:3rem;margin-bottom:12px;">⚽</div>
         <div style="color:#f1f5f9;font-size:1.2rem;font-weight:700;margin-bottom:6px;">Welcome to TactIQ</div>
-        <div style="color:#94a3b8;font-size:.875rem;margin-bottom:28px;">How do you want to use the app?</div>
+        <div style="color:#94a3b8;font-size:.875rem;margin-bottom:28px;">Get started by creating a team or joining one.</div>
         <div style="display:flex;gap:16px;">
-          <button id="role-coach" style="flex:1;background:#0e0e1a;border:2px solid #1c1c2c;color:#f1f5f9;border-radius:12px;padding:24px 16px;cursor:pointer;font-size:.95rem;font-weight:600;">
+          <button id="btn-create-team" style="flex:1;background:#0e0e1a;border:2px solid #1c1c2c;color:#f1f5f9;border-radius:12px;padding:24px 16px;cursor:pointer;font-size:.95rem;font-weight:600;">
             <div style="font-size:2rem;margin-bottom:10px;">🎽</div>
-            <div style="margin-bottom:6px;">Coach</div>
-            <div style="font-size:.75rem;color:#94a3b8;line-height:1.4;">Manage teams and control what players can see</div>
+            <div style="margin-bottom:6px;">Create Team</div>
+            <div style="font-size:.75rem;color:#94a3b8;line-height:1.4;">Start as a head coach and invite players</div>
           </button>
-          <button id="role-player" style="flex:1;background:#0e0e1a;border:2px solid #1c1c2c;color:#f1f5f9;border-radius:12px;padding:24px 16px;cursor:pointer;font-size:.95rem;font-weight:600;">
-            <div style="font-size:2rem;margin-bottom:10px;">⚽</div>
-            <div style="margin-bottom:6px;">Player</div>
-            <div style="font-size:.75rem;color:#94a3b8;line-height:1.4;">Join your coach's team with a team code</div>
+          <button id="btn-join-team" style="flex:1;background:#0e0e1a;border:2px solid #1c1c2c;color:#f1f5f9;border-radius:12px;padding:24px 16px;cursor:pointer;font-size:.95rem;font-weight:600;">
+            <div style="font-size:2rem;margin-bottom:10px;">🔗</div>
+            <div style="margin-bottom:6px;">Join Team</div>
+            <div style="font-size:.75rem;color:#94a3b8;line-height:1.4;">Enter the invite code from your coach</div>
           </button>
         </div>
       </div>`);
-    document.getElementById('role-coach').addEventListener('click', async () => {
-      showOverlay('<div style="color:#94a3b8;">Setting up coach account…</div>');
+    document.getElementById('btn-create-team').addEventListener('click', () => showCreateTeam(user));
+    document.getElementById('btn-join-team').addEventListener('click', () => showJoinTeam(user, ''));
+  }
+
+  // ── Create team screen ───────────────────────────────────────────────────────
+  function showCreateTeam(user) {
+    showOverlay(`
+      <div style="text-align:center;max-width:340px;width:100%;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🎽</div>
+        <div style="color:#f1f5f9;font-size:1.1rem;font-weight:700;margin-bottom:6px;">Create Your Team</div>
+        <div style="color:#94a3b8;font-size:.85rem;margin-bottom:24px;">What's your team called?</div>
+        <input id="team-name-input" placeholder="Team name (e.g. FC Tigers)"
+          style="width:100%;background:#0e0e1a;border:1px solid #334155;color:#f1f5f9;border-radius:8px;padding:12px 14px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:16px;"/>
+        <button id="create-team-btn" style="width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;">Create Team</button>
+        <button id="create-back-btn" style="width:100%;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;padding:10px;font-size:.85rem;cursor:pointer;">← Back</button>
+      </div>`);
+    const input = document.getElementById('team-name-input');
+    input.focus();
+    document.getElementById('create-back-btn').addEventListener('click', () => showWelcomeScreen(user));
+    const create = async () => {
+      const name = input.value.trim();
+      if (!name) { input.style.borderColor = '#ef4444'; return; }
+      showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Creating team…</div>');
+      const teamId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Date.now().toString(36) + Math.random().toString(36).slice(2);
+      const membership = { teamId, teamName: name, role: 'head-coach', ownerUid: user.uid, joinedAt: Date.now() };
+      const existing = await getProfile(user.uid);
+      const existingMems = (existing && existing.memberships) || [];
       await saveProfile(user.uid, {
-        role: 'coach',
-        playerPermissions: {
+        memberships: [...existingMems, membership],
+        playerPermissions: (existing && existing.playerPermissions) || {
           players: true, exercises: true, plays: true, stats: true, points: true, cards: true, blackbox: true,
           playerSections: { attributes: true, categoryProgression: true, gameStats: true, statProgression: true }
         }
       });
-      continueAsCoach(user);
-    });
-    document.getElementById('role-player').addEventListener('click', () => showPlayerJoin(user, ''));
+      await activateMembership(user, membership, [...existingMems, membership]);
+    };
+    document.getElementById('create-team-btn').addEventListener('click', create);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') create(); });
   }
 
-  // ── Player join screen ───────────────────────────────────────────────────────
-  function showPlayerJoin(user, errorMsg) {
+  // ── Join team screen ─────────────────────────────────────────────────────────
+  function showJoinTeam(user, errorMsg) {
     showOverlay(`
       <div style="text-align:center;max-width:340px;width:100%;">
-        <div style="font-size:2.5rem;margin-bottom:12px;">⚽</div>
-        <div style="color:#f1f5f9;font-size:1.1rem;font-weight:700;margin-bottom:6px;">Join Your Coach</div>
-        <div style="color:#94a3b8;font-size:.85rem;margin-bottom:24px;line-height:1.5;">Enter the team code your coach shared with you.</div>
-        <input id="coach-code-input" placeholder="Paste team code here"
-          style="width:100%;background:#0e0e1a;border:1px solid #334155;color:#f1f5f9;border-radius:8px;padding:12px 14px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:8px;"/>
+        <div style="font-size:2.5rem;margin-bottom:12px;">🔗</div>
+        <div style="color:#f1f5f9;font-size:1.1rem;font-weight:700;margin-bottom:6px;">Join a Team</div>
+        <div style="color:#94a3b8;font-size:.85rem;margin-bottom:24px;line-height:1.5;">Enter the 6-character invite code from your coach.</div>
+        <input id="invite-code-input" placeholder="e.g. ABC123" maxlength="6"
+          style="width:100%;background:#0e0e1a;border:1px solid #334155;color:#f1f5f9;border-radius:8px;padding:12px 14px;font-size:1.1rem;text-transform:uppercase;text-align:center;letter-spacing:.2em;outline:none;box-sizing:border-box;margin-bottom:8px;"/>
         <div style="color:#ef4444;font-size:.8rem;min-height:20px;margin-bottom:12px;">${errorMsg}</div>
-        <button id="code-join-btn" style="width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;">Join Team</button>
-        <button id="code-back-btn" style="width:100%;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;padding:10px;font-size:.85rem;cursor:pointer;">← Back</button>
+        <button id="join-btn" style="width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;">Join Team</button>
+        <button id="join-back-btn" style="width:100%;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;padding:10px;font-size:.85rem;cursor:pointer;">← Back</button>
       </div>`);
-    const input = document.getElementById('coach-code-input');
+    const input = document.getElementById('invite-code-input');
     input.focus();
-    document.getElementById('code-back-btn').addEventListener('click', () => showRoleSelection(user));
+    input.addEventListener('input', () => { input.value = input.value.toUpperCase(); });
+    document.getElementById('join-back-btn').addEventListener('click', () => showWelcomeScreen(user));
     const join = () => attemptJoin(user, input.value.trim());
-    document.getElementById('code-join-btn').addEventListener('click', join);
+    document.getElementById('join-btn').addEventListener('click', join);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') join(); });
   }
 
   async function attemptJoin(user, code) {
-    if (!code) { showPlayerJoin(user, 'Please enter a team code.'); return; }
-    showOverlay('<div style="color:#94a3b8;">Connecting to team…</div>');
+    if (!code) { showJoinTeam(user, 'Please enter an invite code.'); return; }
+    showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Validating code…</div>');
     try {
-      const snap = await userDoc(code).get();
-      if (!snap.exists || snap.data().role !== 'coach') {
-        showPlayerJoin(user, 'Team code not found. Check with your coach.'); return;
+      const snap = await inviteDoc(code).get();
+      if (!snap.exists) { showJoinTeam(user, 'Code not found. Check with your coach.'); return; }
+      const invite = snap.data();
+      if (invite.used && invite.usedBy !== user.uid) {
+        showJoinTeam(user, 'This code has already been used.');
+        return;
       }
-      const coachData = snap.data();
+
+      const coachSnap = await userDoc(invite.ownerUid).get();
+      if (!coachSnap.exists) { showJoinTeam(user, 'Team not found. Contact your coach.'); return; }
+      const coachData = coachSnap.data();
       if (coachData.teams) origSet(STORAGE_KEY, coachData.teams);
-      await saveProfile(user.uid, { role: 'player', coachUid: code });
-      continueAsPlayer(user, code, coachData);
+
+      if (!invite.used) {
+        await inviteDoc(code).update({
+          used: true, usedBy: user.uid,
+          usedByName: user.displayName || user.email,
+          usedAt: Date.now()
+        });
+      }
+
+      const membership = {
+        teamId: invite.teamId, teamName: invite.teamName,
+        role: invite.role, ownerUid: invite.ownerUid, joinedAt: Date.now()
+      };
+      const existing = await getProfile(user.uid);
+      const existingMems = (existing && existing.memberships) || [];
+      const alreadyMember = existingMems.some(
+        (m) => m.ownerUid === invite.ownerUid && m.teamId === invite.teamId
+      );
+      const newMems = alreadyMember ? existingMems : [...existingMems, membership];
+      if (!alreadyMember) await saveProfile(user.uid, { memberships: newMems });
+      await activateMembership(user, alreadyMember ? existingMems.find(m => m.ownerUid === invite.ownerUid && m.teamId === invite.teamId) : membership, newMems);
     } catch {
-      showPlayerJoin(user, 'Connection error. Please try again.');
+      showJoinTeam(user, 'Connection error. Please try again.');
     }
   }
 
-  // ── Continue as coach ────────────────────────────────────────────────────────
-  async function continueAsCoach(user) {
-    if (isHome) {
-      showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Syncing data…</div>');
-      await syncDown(user.uid);
-    }
-    window.APP_ROLE      = 'coach';
-    window.APP_COACH_UID = user.uid;
-    cloudReady = true;
-    hideOverlay();
-    injectUserBadge(user, 'coach');
-    resolveReady(user);
+  // ── Membership selector ──────────────────────────────────────────────────────
+  function showMembershipSelector(user, memberships, canClose) {
+    const cards = memberships.map((m, i) => {
+      const rl = m.role === 'head-coach' ? 'Head Coach' : m.role === 'assistant-coach' ? 'Assistant Coach' : 'Player';
+      return `<button class="mem-card" data-index="${i}" style="width:100%;background:#0e0e1a;border:2px solid #1c1c2c;color:#f1f5f9;border-radius:12px;padding:16px;cursor:pointer;text-align:left;margin-bottom:10px;">
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px;">${escHtml(m.teamName)}</div>
+        <div style="font-size:.8rem;color:#94a3b8;">${rl}</div>
+      </button>`;
+    }).join('');
+
+    showOverlay(`
+      <div style="text-align:center;max-width:380px;width:100%;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">⚽</div>
+        <div style="color:#f1f5f9;font-size:1.1rem;font-weight:700;margin-bottom:6px;">Select a Team</div>
+        <div style="color:#94a3b8;font-size:.85rem;margin-bottom:20px;">Choose which team to open.</div>
+        <div id="mem-cards">${cards}</div>
+        <button id="mem-join-more" style="width:100%;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;padding:10px;font-size:.85rem;cursor:pointer;margin-top:4px;">+ Join another team</button>
+        ${canClose ? '<button id="mem-cancel" style="width:100%;background:transparent;color:#475569;border:none;padding:8px;font-size:.8rem;cursor:pointer;margin-top:4px;">Cancel</button>' : ''}
+        <button id="mem-signout" style="width:100%;background:transparent;color:#475569;border:none;padding:8px;font-size:.8rem;cursor:pointer;margin-top:4px;">Sign out</button>
+      </div>`);
+
+    document.querySelectorAll('.mem-card').forEach((card) => {
+      card.addEventListener('click', async () => {
+        const m = memberships[parseInt(card.dataset.index, 10)];
+        if (canClose) {
+          // Team switch: store target and navigate to home
+          sessionStorage.setItem('tiq_active_mem', JSON.stringify({ teamId: m.teamId, ownerUid: m.ownerUid }));
+          window.location.href = 'index.html';
+        } else {
+          showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Loading…</div>');
+          await activateMembership(user, m, memberships);
+        }
+      });
+    });
+    document.getElementById('mem-join-more').addEventListener('click', () => showJoinTeam(user, ''));
+    if (canClose) document.getElementById('mem-cancel').addEventListener('click', hideOverlay);
+    document.getElementById('mem-signout').addEventListener('click', () => {
+      if (confirm('Sign out of TactIQ?')) firebase.auth().signOut();
+    });
   }
 
-  // ── Continue as player ───────────────────────────────────────────────────────
-  async function continueAsPlayer(user, coachUid, coachData) {
-    if (isHome) {
+  // ── Activate membership ──────────────────────────────────────────────────────
+  async function activateMembership(user, membership, allMemberships) {
+    const { role, ownerUid } = membership;
+
+    if (role === 'head-coach') {
+      if (isHome) {
+        showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Syncing data…</div>');
+        await syncDown(user.uid);
+      }
+      window.APP_ROLE      = 'head-coach';
+      window.APP_OWNER_UID = user.uid;
+    } else {
       showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Loading team data…</div>');
       try {
-        const snap = await userDoc(coachUid).get();
-        if (snap.exists && snap.data().teams) origSet(STORAGE_KEY, snap.data().teams);
-        coachData = snap.data();
+        const snap = await userDoc(ownerUid).get();
+        const ownerData = snap.exists ? snap.data() : {};
+        if (isHome && ownerData.teams) origSet(STORAGE_KEY, ownerData.teams);
+        if (role === 'player') {
+          window.APP_PERMISSIONS = ownerData.playerPermissions ||
+            { players: true, exercises: true, plays: true, stats: true, points: true, cards: true };
+        }
       } catch (_) {}
+      window.APP_ROLE      = role;
+      window.APP_OWNER_UID = ownerUid;
+      if (role === 'player') document.body.classList.add('player-mode');
     }
-    const permissions = (coachData && coachData.playerPermissions) ||
-      { players: true, exercises: true, plays: true, stats: true, points: true, cards: true };
-    window.APP_ROLE        = 'player';
-    window.APP_PERMISSIONS = permissions;
-    window.APP_COACH_UID   = coachUid;
-    document.body.classList.add('player-mode');
+
     cloudReady = true;
     hideOverlay();
-    injectUserBadge(user, 'player');
+    injectUserBadge(user, role, membership.teamName, allMemberships);
     resolveReady(user);
+  }
+
+  // ── Backward-compat migration ────────────────────────────────────────────────
+  async function migrateOldProfile(user, profile) {
+    showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Updating your account…</div>');
+    let membership;
+    if (profile.role === 'coach') {
+      membership = { teamId: 'legacy', teamName: 'My Team', role: 'head-coach', ownerUid: user.uid, joinedAt: Date.now() };
+    } else {
+      if (!profile.coachUid) {
+        await saveProfile(user.uid, { memberships: [] });
+        showWelcomeScreen(user);
+        return;
+      }
+      membership = { teamId: 'legacy', teamName: "Coach's Team", role: 'player', ownerUid: profile.coachUid, joinedAt: Date.now() };
+    }
+    await saveProfile(user.uid, { memberships: [membership] });
+    await activateMembership(user, membership, [membership]);
   }
 
   // ── Auth state ───────────────────────────────────────────────────────────────
@@ -221,30 +356,75 @@
     }
 
     const profile = await getProfile(user.uid);
-    if (!profile || !profile.role) { showRoleSelection(user); return; }
 
-    if (profile.role === 'coach') {
-      await continueAsCoach(user);
+    // Backward-compat: old single-role system
+    if (profile && profile.role && !profile.memberships) {
+      await migrateOldProfile(user, profile);
+      return;
+    }
+
+    const memberships = profile && profile.memberships;
+    if (!memberships || memberships.length === 0) {
+      showWelcomeScreen(user);
+      return;
+    }
+
+    // Check if a specific team was requested (from team switcher)
+    const storedMem = sessionStorage.getItem('tiq_active_mem');
+    if (storedMem) {
+      sessionStorage.removeItem('tiq_active_mem');
+      try {
+        const { teamId, ownerUid } = JSON.parse(storedMem);
+        const target = memberships.find((m) => m.teamId === teamId && m.ownerUid === ownerUid);
+        if (target) {
+          await activateMembership(user, target, memberships);
+          return;
+        }
+      } catch (_) {}
+    }
+
+    if (memberships.length === 1) {
+      await activateMembership(user, memberships[0], memberships);
     } else {
-      if (!profile.coachUid) { showPlayerJoin(user, ''); return; }
-      const coachSnap = await userDoc(profile.coachUid).get();
-      if (!coachSnap.exists) {
-        showPlayerJoin(user, 'Your coach\'s team was not found. Enter a new code.');
-        await saveProfile(user.uid, { coachUid: null });
-        return;
-      }
-      await continueAsPlayer(user, profile.coachUid, coachSnap.data());
+      showMembershipSelector(user, memberships, false);
     }
   });
 
   window.signOut = () => firebase.auth().signOut();
 
-  // Called by team.js to update coach permissions
   window.savePlayerPermissions = async (permissions) => {
     const user = firebase.auth().currentUser;
-    if (!user || window.APP_ROLE !== 'coach') return;
+    if (!user || window.APP_ROLE === 'player') return;
     await userDoc(user.uid).set({ playerPermissions: permissions }, { merge: true });
   };
 
-  window.getTeamCode = () => window.APP_COACH_UID;
+  window.getTeamCode = () => window.APP_OWNER_UID;
+
+  window.createInvite = async ({ ownerUid, teamId, teamName, role, label }) => {
+    let code;
+    let attempts = 0;
+    do {
+      code = genCode();
+      const existing = await inviteDoc(code).get();
+      if (!existing.exists) break;
+    } while (++attempts < 10);
+    await inviteDoc(code).set({
+      ownerUid, teamId, teamName, role, label,
+      used: false, usedBy: null, usedByName: null, createdAt: Date.now()
+    });
+    return code;
+  };
+
+  window.getInvites = async (ownerUid) => {
+    const snap = await firebase.firestore().collection('invites')
+      .where('ownerUid', '==', ownerUid)
+      .get();
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  };
+
+  window.deleteInvite = async (code) => {
+    await firebase.firestore().collection('invites').doc(code).delete();
+  };
 })();
