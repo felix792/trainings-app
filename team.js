@@ -58,14 +58,14 @@ if (!team) {
   window.DB_READY.then(() => {
     if (window.APP_ROLE === 'player') {
       applyPlayerPermissions(window.APP_PERMISSIONS || {});
-    } else if (window.APP_ROLE === 'coach') {
-      injectCoachPanel();
+    } else {
       loadBlackboxCount();
+      if (window.APP_ROLE === 'head-coach') injectCoachPanel();
     }
   });
 
   function loadBlackboxCount() {
-    const uid = window.APP_COACH_UID;
+    const uid = window.APP_OWNER_UID;
     if (!uid) return;
     firebase.firestore()
       .collection('blackbox').doc(uid).collection('notes')
@@ -107,13 +107,17 @@ function applyPlayerPermissions(permissions) {
   });
 }
 
+function escHtmlTeam(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // ── Coach: inject settings icon + slide-in drawer ─────────────────────────
 function injectCoachPanel() {
   // Settings button in header
   const header = document.querySelector('.header-inner');
   const settingsBtn = document.createElement('button');
   settingsBtn.id = 'settings-btn';
-  settingsBtn.setAttribute('aria-label', 'Player Access Settings');
+  settingsBtn.setAttribute('aria-label', 'Team Settings');
   settingsBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="3"/>
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -129,20 +133,36 @@ function injectCoachPanel() {
   drawer.id = 'settings-drawer';
   drawer.innerHTML = `
     <div class="settings-drawer-header">
-      <span class="settings-drawer-title">Player Access</span>
+      <span class="settings-drawer-title">Team Settings</span>
       <button id="settings-close" aria-label="Close">&times;</button>
     </div>
 
-    <div class="settings-section-label">Team Code</div>
-    <div class="settings-code-row">
-      <code id="team-code-display">${window.getTeamCode ? window.getTeamCode() : '—'}</code>
-      <button id="copy-code-btn">Copy</button>
+    <div class="settings-section-label">Invite Members</div>
+    <div class="invite-form-wrap">
+      <input id="invite-label-input" class="invite-label-input" placeholder="Label (e.g. Max — Striker)" maxlength="40" />
+      <div class="invite-role-row">
+        <select id="invite-role-select" class="invite-role-select">
+          <option value="player">Player</option>
+          <option value="assistant-coach">Assistant Coach</option>
+        </select>
+        <button id="invite-generate-btn" class="invite-generate-btn">Generate Code</button>
+      </div>
     </div>
-    <div class="settings-hint">Share this code with your players so they can join.</div>
+    <div id="invite-code-box" class="invite-code-box" style="display:none">
+      <code id="invite-code-text" class="invite-code-text"></code>
+      <button id="invite-code-copy-btn" class="invite-code-copy-btn">Copy</button>
+      <p class="invite-code-hint">6-character code · expires after one use</p>
+    </div>
+
+    <div class="settings-section-label" style="margin-top:20px">Active Invites</div>
+    <div id="invite-active-list" class="invite-list-wrap"><span class="invite-list-empty">Loading…</span></div>
+
+    <div class="settings-section-label" style="margin-top:20px">Members</div>
+    <div id="invite-members-list" class="invite-list-wrap"><span class="invite-list-empty">Loading…</span></div>
 
     <div class="settings-divider"></div>
 
-    <div class="settings-section-label">What players can see</div>
+    <div class="settings-section-label">Player Permissions</div>
     <div id="perm-toggles"></div>
     <div id="perm-status"></div>`;
   document.body.appendChild(drawer);
@@ -151,18 +171,103 @@ function injectCoachPanel() {
   function openDrawer()  { drawer.classList.add('open'); backdrop.classList.add('open'); }
   function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); }
 
-  settingsBtn.addEventListener('click', openDrawer);
-  document.getElementById('settings-close').addEventListener('click', closeDrawer);
-  backdrop.addEventListener('click', closeDrawer);
+  function closeDrawerHandler() { closeDrawer(); }
+  document.getElementById('settings-close').addEventListener('click', closeDrawerHandler);
+  backdrop.addEventListener('click', closeDrawerHandler);
 
-  // Copy code
-  document.getElementById('copy-code-btn').addEventListener('click', () => {
-    const code = window.getTeamCode ? window.getTeamCode() : '';
+  // ── Invites panel ──────────────────────────────────────────────────────────
+  function loadInvitesPanel() {
+    const uid = window.APP_OWNER_UID;
+    if (!uid || !window.getInvites) return;
+    window.getInvites(uid).then((invites) => {
+      const activeEl  = document.getElementById('invite-active-list');
+      const membersEl = document.getElementById('invite-members-list');
+      if (!activeEl || !membersEl) return;
+
+      const active  = invites.filter((i) => !i.used);
+      const members = invites.filter((i) => i.used);
+
+      if (active.length === 0) {
+        activeEl.innerHTML = '<span class="invite-list-empty">No active invites.</span>';
+      } else {
+        activeEl.innerHTML = active.map((inv) => `
+          <div class="invite-item">
+            <div class="invite-item-info">
+              <span class="invite-item-code">${escHtmlTeam(inv.id)}</span>
+              ${inv.label ? `<span class="invite-item-label">${escHtmlTeam(inv.label)}</span>` : ''}
+              <span class="invite-item-role">${inv.role === 'assistant-coach' ? 'Asst. Coach' : 'Player'}</span>
+            </div>
+            <button class="invite-revoke-btn" data-code="${escHtmlTeam(inv.id)}">Revoke</button>
+          </div>`).join('');
+        activeEl.querySelectorAll('.invite-revoke-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Revoke this invite code?')) return;
+            btn.disabled = true;
+            await window.deleteInvite(btn.dataset.code);
+            loadInvitesPanel();
+          });
+        });
+      }
+
+      if (members.length === 0) {
+        membersEl.innerHTML = '<span class="invite-list-empty">No members yet. Generate an invite code to add people.</span>';
+      } else {
+        membersEl.innerHTML = members.map((inv) => `
+          <div class="invite-item">
+            <div class="invite-item-info">
+              <span class="invite-item-name">${escHtmlTeam(inv.usedByName || 'Unknown')}</span>
+              <span class="invite-item-role">${inv.role === 'assistant-coach' ? 'Asst. Coach' : 'Player'}</span>
+              ${inv.label ? `<span class="invite-item-label">${escHtmlTeam(inv.label)}</span>` : ''}
+            </div>
+          </div>`).join('');
+      }
+    }).catch(() => {
+      const el = document.getElementById('invite-active-list');
+      if (el) el.innerHTML = '<span class="invite-list-empty">Could not load invites.</span>';
+    });
+  }
+
+  // Generate invite code
+  document.getElementById('invite-generate-btn').addEventListener('click', async () => {
+    const label = document.getElementById('invite-label-input').value.trim();
+    const role  = document.getElementById('invite-role-select').value;
+    const uid   = window.APP_OWNER_UID;
+    const teams = loadTeams();
+    const t     = teams.find((x) => x.id === teamId);
+    const btn   = document.getElementById('invite-generate-btn');
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    try {
+      const code = await window.createInvite({
+        ownerUid: uid,
+        teamId:   teamId || 'legacy',
+        teamName: t ? t.name : 'My Team',
+        role, label
+      });
+      document.getElementById('invite-code-box').style.display = '';
+      document.getElementById('invite-code-text').textContent = code;
+      document.getElementById('invite-label-input').value = '';
+      loadInvitesPanel();
+    } catch {
+      alert('Failed to generate code. Please try again.');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Generate Code';
+  });
+
+  // Copy generated code
+  document.getElementById('invite-code-copy-btn').addEventListener('click', () => {
+    const code = document.getElementById('invite-code-text').textContent;
     navigator.clipboard.writeText(code).then(() => {
-      const btn = document.getElementById('copy-code-btn');
+      const btn = document.getElementById('invite-code-copy-btn');
       btn.textContent = 'Copied!';
       setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
     });
+  });
+
+  settingsBtn.addEventListener('click', () => {
+    openDrawer();
+    loadInvitesPanel();
   });
 
   // Permission toggles
@@ -183,7 +288,7 @@ function injectCoachPanel() {
     { key: 'statProgression',     label: 'Stat Progression' },
   ];
 
-  const uid = window.APP_COACH_UID;
+  const uid = window.APP_OWNER_UID;
   firebase.firestore().collection('users').doc(uid).get().then((snap) => {
     const data  = snap.exists ? snap.data() : {};
     const perms = data.playerPermissions ||
