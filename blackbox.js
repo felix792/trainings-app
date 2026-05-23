@@ -18,11 +18,11 @@ window.DB_READY.then(() => {
 
   document.getElementById('backTeamName').textContent = 'Team';
   document.getElementById('backLink').href = 'team.html?id=' + teamId;
-  document.getElementById('teamMeta').textContent = role === 'coach'
+  document.getElementById('teamMeta').textContent = role !== 'player'
     ? 'Anonymous notes from your players'
     : 'Send an anonymous note to your coach';
 
-  if (role === 'coach') {
+  if (role !== 'player') {
     renderCoachView(coachUid);
   } else {
     renderPlayerView(coachUid);
