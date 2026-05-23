@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — TactIQ</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="theme-color" content="#16a34a" />
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <a id="backLink" href="index.html" class="back-link" aria-label="Back to team">
+          <span class="back-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+          <span class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4V12c0 5-4 8.5-8 10C8 20.5 4 17 4 12V6z"/></svg></span>
+          <span class="logo-text" id="backTeamName">Team</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="sp-layout">
+
+      <!-- Left sidebar -->
+      <aside class="sp-sidebar">
+        <div class="sp-sidebar-heading">Settings</div>
+        <nav class="sp-nav">
+          <button class="sp-nav-item sp-nav-active" data-section="invite">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Invite Members
+          </button>
+          <button class="sp-nav-item" data-section="members">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Members
+          </button>
+          <button class="sp-nav-item" data-section="permissions">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Player Permissions
+          </button>
+        </nav>
+      </aside>
+
+      <!-- Right content -->
+      <div class="sp-content">
+
+        <!-- Invite Members -->
+        <div id="section-invite" class="sp-section">
+          <h2 class="sp-section-title">Invite Members</h2>
+          <p class="sp-section-desc">Generate a one-time code to add a player or assistant coach to your team.</p>
+
+          <div class="sp-card">
+            <div class="sp-field-group">
+              <label class="sp-label">Label <span class="sp-label-hint">(optional — e.g. Max · Striker)</span></label>
+              <input id="invite-label" class="sp-input" placeholder="Helps you remember who this code is for" maxlength="40" />
+            </div>
+            <div class="sp-field-group">
+              <label class="sp-label">Role</label>
+              <div class="sp-role-btns">
+                <button class="sp-role-btn sp-role-active" data-role="player">Player</button>
+                <button class="sp-role-btn" data-role="assistant-coach">Assistant Coach</button>
+              </div>
+            </div>
+            <button id="generate-btn" class="sp-generate-btn">Generate Invite Code</button>
+          </div>
+
+          <div id="invite-code-result" class="sp-code-result" style="display:none">
+            <div class="sp-code-display">
+              <span id="invite-code-value" class="sp-code-value"></span>
+              <button id="invite-code-copy" class="sp-code-copy-btn">Copy</button>
+            </div>
+            <p class="sp-code-note">Share this 6-character code once — it expires after use.</p>
+          </div>
+
+          <h3 class="sp-subsection-title">Active Invite Codes</h3>
+          <div id="active-invites-list"><span class="sp-empty">Loading…</span></div>
+        </div>
+
+        <!-- Members -->
+        <div id="section-members" class="sp-section" style="display:none">
+          <h2 class="sp-section-title">Members</h2>
+          <p class="sp-section-desc">Everyone who has joined your team via an invite code.</p>
+          <div id="members-list"><span class="sp-empty">Loading…</span></div>
+        </div>
+
+        <!-- Player Permissions -->
+        <div id="section-permissions" class="sp-section" style="display:none">
+          <h2 class="sp-section-title">Player Permissions</h2>
+          <p class="sp-section-desc">Control which categories players can see when they open the app.</p>
+          <div id="perm-toggles-page"></div>
+          <div id="perm-status-page" style="font-size:.85rem;margin-top:12px;min-height:20px;"></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Confirmation modal -->
+  <div id="perm-confirm-modal"></div>
+
+  <script src="settings.js"></script>
+</body>
+</html>
