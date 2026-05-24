@@ -46,6 +46,10 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Player Permissions
           </button>
+          <button class="sp-nav-item" data-section="coachsystem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Coach System
+          </button>
         </nav>
       </aside>
 
@@ -97,6 +101,23 @@
           <p class="sp-section-desc">Control which categories players can see when they open the app.</p>
           <div id="perm-toggles-page"></div>
           <div id="perm-status-page" style="font-size:.85rem;margin-top:12px;min-height:20px;"></div>
+        </div>
+
+        <!-- Coach System -->
+        <div id="section-coachsystem" class="sp-section" style="display:none">
+          <h2 class="sp-section-title">Coach System</h2>
+          <p class="sp-section-desc">Choose how coaching roles appear across the app — for all members of your team.</p>
+          <div class="sp-system-cards">
+            <button class="sp-system-card" data-system="simple">
+              <div class="sp-system-card-title">Simple</div>
+              <div class="sp-system-card-desc">Everyone with coach access is shown as <strong>Coach</strong>. No distinction between head coach and assistant coaches.</div>
+            </button>
+            <button class="sp-system-card" data-system="multi">
+              <div class="sp-system-card-title">Multi-tier</div>
+              <div class="sp-system-card-desc">Roles are shown as <strong>Head Coach</strong> and <strong>Assistant Coach</strong>. Assistants can edit team data but cannot manage settings or invites.</div>
+            </button>
+          </div>
+          <div id="coach-system-status" style="font-size:.85rem;margin-top:14px;min-height:20px;"></div>
         </div>
 
       </div>
