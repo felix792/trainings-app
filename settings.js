@@ -113,11 +113,10 @@ function loadCoachSystem() {
       document.querySelectorAll('.sp-system-card').forEach((c) => c.classList.remove('sp-system-card-active'));
       card.classList.add('sp-system-card-active');
       const status = document.getElementById('coach-system-status');
-      status.textContent = 'Saving…';
-      status.style.color = '#6868a0';
-      await window.saveCoachSystem(chosen);
+      window.APP_COACH_SYSTEM = chosen;
       status.textContent = 'Saved — reload to see updated role labels';
       status.style.color = '#16a34a';
+      window.saveCoachSystem(chosen);
     });
   });
 }
