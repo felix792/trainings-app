@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile — TactIQ</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="theme-color" content="#16a34a" />
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <button id="backBtn" class="back-link" aria-label="Go back">
+          <span class="back-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+          <span class="logo-text">Back</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="prof-page">
+
+      <div class="prof-avatar-wrap">
+        <div class="prof-avatar" id="profAvatar">
+          <img id="profAvatarImg" src="" alt="Profile photo" />
+          <span id="profAvatarInitial"></span>
+        </div>
+        <button class="prof-upload-btn" id="profUploadBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Change Photo
+        </button>
+        <input type="file" id="profFileInput" accept="image/*" style="display:none" />
+      </div>
+
+      <div class="prof-form">
+        <div class="prof-field">
+          <label class="prof-label">Display Name</label>
+          <input id="profName" class="prof-input" type="text" placeholder="Your name" maxlength="50" />
+        </div>
+        <div class="prof-field">
+          <label class="prof-label">Email</label>
+          <input id="profEmail" class="prof-input" type="email" disabled />
+        </div>
+        <div class="prof-form-footer">
+          <button id="profSaveBtn" class="prof-save-btn">Save Changes</button>
+          <span id="profStatus" class="prof-status"></span>
+        </div>
+      </div>
+
+      <div class="prof-actions">
+        <button id="switchTeamBtn" class="prof-action-btn" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Switch Team
+        </button>
+        <button id="signOutBtn" class="prof-action-btn prof-action-danger">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign Out
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="profile.js"></script>
+</body>
+</html>
