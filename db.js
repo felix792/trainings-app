@@ -6,10 +6,11 @@
   let syncTimer  = null;
   let cloudReady = false;
   let resolveReady;
-  window.DB_READY        = new Promise((r) => { resolveReady = r; });
-  window.APP_ROLE        = null;   // 'head-coach' | 'assistant-coach' | 'player'
-  window.APP_PERMISSIONS = null;
-  window.APP_OWNER_UID   = null;   // head-coach's UID where team data lives
+  window.DB_READY         = new Promise((r) => { resolveReady = r; });
+  window.APP_ROLE         = null;   // 'head-coach' | 'assistant-coach' | 'player'
+  window.APP_PERMISSIONS  = null;
+  window.APP_OWNER_UID    = null;   // head-coach's UID where team data lives
+  window.APP_COACH_SYSTEM = 'multi'; // 'multi' | 'simple'
 
   // Backward-compat alias so pages that still reference APP_COACH_UID work
   Object.defineProperty(window, 'APP_COACH_UID', {
@@ -91,7 +92,10 @@
     if (!header || document.getElementById('db-user-btn')) return;
     const btn = document.createElement('button');
     btn.id = 'db-user-btn';
-    const roleLabel = role === 'head-coach' ? 'Head Coach' : role === 'assistant-coach' ? 'Asst. Coach' : 'Player';
+    const simple = window.APP_COACH_SYSTEM === 'simple';
+    const roleLabel = role === 'player' ? 'Player'
+      : role === 'head-coach' ? (simple ? 'Coach' : 'Head Coach')
+      : (simple ? 'Coach' : 'Asst. Coach');
     const multiTeam = memberships && memberships.length > 1;
     btn.title = roleLabel + ' — ' + user.email + (multiTeam ? '\nClick to switch team' : '\nClick to sign out');
     btn.style.cssText = 'background:transparent;border:1px solid #334155;color:#94a3b8;border-radius:7px;padding:5px 10px;font-size:.75rem;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px';
@@ -299,10 +303,13 @@
     const { role, ownerUid } = membership;
 
     if (role === 'head-coach') {
-      if (isHome) {
-        showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Syncing data…</div>');
-        await syncDown(user.uid);
-      }
+      showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Syncing data…</div>');
+      try {
+        const snap = await userDoc(user.uid).get();
+        const data  = snap.exists ? snap.data() : {};
+        if (isHome && data.teams) origSet(STORAGE_KEY, data.teams);
+        window.APP_COACH_SYSTEM = data.coachSystem || 'multi';
+      } catch (_) { window.APP_COACH_SYSTEM = 'multi'; }
       window.APP_ROLE      = 'head-coach';
       window.APP_OWNER_UID = user.uid;
     } else {
@@ -311,11 +318,12 @@
         const snap = await userDoc(ownerUid).get();
         const ownerData = snap.exists ? snap.data() : {};
         if (isHome && ownerData.teams) origSet(STORAGE_KEY, ownerData.teams);
+        window.APP_COACH_SYSTEM = ownerData.coachSystem || 'multi';
         if (role === 'player') {
           window.APP_PERMISSIONS = ownerData.playerPermissions ||
             { players: true, exercises: true, plays: true, stats: true, points: true, cards: true };
         }
-      } catch (_) {}
+      } catch (_) { window.APP_COACH_SYSTEM = 'multi'; }
       window.APP_ROLE      = role;
       window.APP_OWNER_UID = ownerUid;
       if (role === 'player') document.body.classList.add('player-mode');
@@ -399,6 +407,13 @@
   };
 
   window.getTeamCode = () => window.APP_OWNER_UID;
+
+  window.saveCoachSystem = (system) => {
+    const user = firebase.auth().currentUser;
+    if (!user || window.APP_ROLE !== 'head-coach') return;
+    window.APP_COACH_SYSTEM = system;
+    userDoc(user.uid).set({ coachSystem: system }, { merge: true });
+  };
 
   window.createInvite = async ({ ownerUid, teamId, teamName, role, label }) => {
     let code;
