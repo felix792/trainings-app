@@ -81,10 +81,46 @@ window.DB_READY.then(() => {
     });
   });
 
+  // Hide assistant-coach invite option when simple system is active
+  function applyCoachSystemToInviteForm() {
+    const simple = window.APP_COACH_SYSTEM === 'simple';
+    document.querySelectorAll('.sp-role-btn[data-role="assistant-coach"]').forEach((btn) => {
+      btn.style.display = simple ? 'none' : '';
+    });
+    if (simple && selectedRole === 'assistant-coach') {
+      selectedRole = 'player';
+      document.querySelectorAll('.sp-role-btn').forEach((b) => b.classList.remove('sp-role-active'));
+      const playerBtn = document.querySelector('.sp-role-btn[data-role="player"]');
+      if (playerBtn) playerBtn.classList.add('sp-role-active');
+    }
+  }
+  applyCoachSystemToInviteForm();
+
   // Initial data load
   loadInvites();
   loadPermissions();
+  loadCoachSystem();
 });
+
+// ── Coach System ─────────────────────────────────────────────────────────────
+function loadCoachSystem() {
+  const current = window.APP_COACH_SYSTEM || 'multi';
+  document.querySelectorAll('.sp-system-card').forEach((card) => {
+    card.classList.toggle('sp-system-card-active', card.dataset.system === current);
+    card.addEventListener('click', async () => {
+      const chosen = card.dataset.system;
+      if (chosen === (window.APP_COACH_SYSTEM || 'multi')) return;
+      document.querySelectorAll('.sp-system-card').forEach((c) => c.classList.remove('sp-system-card-active'));
+      card.classList.add('sp-system-card-active');
+      const status = document.getElementById('coach-system-status');
+      status.textContent = 'Saving…';
+      status.style.color = '#6868a0';
+      await window.saveCoachSystem(chosen);
+      status.textContent = 'Saved — reload to see updated role labels';
+      status.style.color = '#16a34a';
+    });
+  });
+}
 
 // ── Invites ──────────────────────────────────────────────────────────────────
 function loadInvites() {
@@ -111,7 +147,7 @@ function renderActiveInvites(active) {
       <div class="sp-invite-row-left">
         <span class="sp-invite-code">${escapeHtml(inv.id)}</span>
         ${inv.label ? `<span class="sp-tag sp-tag-muted">${escapeHtml(inv.label)}</span>` : ''}
-        <span class="sp-tag">${inv.role === 'assistant-coach' ? 'Asst. Coach' : 'Player'}</span>
+        <span class="sp-tag">${inv.role === 'assistant-coach' ? (window.APP_COACH_SYSTEM === 'simple' ? 'Coach' : 'Asst. Coach') : 'Player'}</span>
       </div>
       <button class="sp-revoke-btn" data-code="${escapeHtml(inv.id)}">Revoke</button>
     </div>`).join('')}</div>`;
@@ -134,7 +170,8 @@ function renderMembers(members) {
   }
   el.innerHTML = `<div class="sp-member-list">${members.map((inv) => {
     const initial  = (inv.usedByName || 'U')[0].toUpperCase();
-    const roleLabel = inv.role === 'assistant-coach' ? 'Assistant Coach' : 'Player';
+    const simple   = window.APP_COACH_SYSTEM === 'simple';
+    const roleLabel = inv.role === 'assistant-coach' ? (simple ? 'Coach' : 'Assistant Coach') : 'Player';
     const tagCls   = inv.role === 'assistant-coach' ? 'sp-tag sp-tag-coach' : 'sp-tag';
     return `
       <div class="sp-member-row">
