@@ -11,6 +11,7 @@
   window.APP_PERMISSIONS  = null;
   window.APP_OWNER_UID    = null;   // head-coach's UID where team data lives
   window.APP_COACH_SYSTEM = 'multi'; // 'multi' | 'simple'
+  window.APP_MEMBERSHIPS  = [];
 
   // Backward-compat alias so pages that still reference APP_COACH_UID work
   Object.defineProperty(window, 'APP_COACH_UID', {
@@ -97,14 +98,12 @@
       : role === 'head-coach' ? (simple ? 'Coach' : 'Head Coach')
       : (simple ? 'Coach' : 'Asst. Coach');
     const multiTeam = memberships && memberships.length > 1;
-    btn.title = roleLabel + ' — ' + user.email + (multiTeam ? '\nClick to switch team' : '\nClick to sign out');
+    btn.title = roleLabel + ' — ' + user.email + '\nClick to view profile';
     btn.style.cssText = 'background:transparent;border:1px solid #334155;color:#94a3b8;border-radius:7px;padding:5px 10px;font-size:.75rem;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px';
     btn.textContent = (teamName ? teamName + ' · ' : '') + roleLabel;
     btn.addEventListener('click', () => {
-      if (multiTeam) {
-        showMembershipSelector(user, memberships, true);
-      } else {
-        if (confirm('Sign out of TactIQ?')) firebase.auth().signOut();
+      if (!window.location.pathname.includes('profile.html')) {
+        window.location.href = 'profile.html';
       }
     });
     header.appendChild(btn);
@@ -330,6 +329,7 @@
     }
 
     cloudReady = true;
+    window.APP_MEMBERSHIPS = allMemberships || [];
     hideOverlay();
     injectUserBadge(user, role, membership.teamName, allMemberships);
     resolveReady(user);
@@ -399,6 +399,34 @@
   });
 
   window.signOut = () => firebase.auth().signOut();
+
+  window.loadProfileData = async () => {
+    const user = firebase.auth().currentUser;
+    if (!user) return null;
+    const snap = await userDoc(user.uid).get();
+    const data = snap.exists ? snap.data() : {};
+    return {
+      displayName: data.displayName || user.displayName || '',
+      email:       user.email || '',
+      photoURL:    data.profilePhoto || null,
+    };
+  };
+
+  window.saveProfileData = async ({ displayName, photo }) => {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+    const updates = {};
+    if (displayName !== undefined) updates.displayName  = displayName;
+    if (photo       !== undefined) updates.profilePhoto = photo;
+    await userDoc(user.uid).set(updates, { merge: true });
+  };
+
+  window.showTeamSelector = () => {
+    const user = firebase.auth().currentUser;
+    if (user && window.APP_MEMBERSHIPS && window.APP_MEMBERSHIPS.length > 1) {
+      showMembershipSelector(user, window.APP_MEMBERSHIPS, true);
+    }
+  };
 
   window.savePlayerPermissions = async (permissions) => {
     const user = firebase.auth().currentUser;
