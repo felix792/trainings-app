@@ -74,6 +74,9 @@ header {
 
 .btn-primary:hover { background: var(--green-dark); }
 
+.btn-danger { background: #dc2626; }
+.btn-danger:hover { background: #b91c1c; }
+
 .btn-secondary {
   background: transparent;
   color: var(--text-muted);
