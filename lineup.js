@@ -240,21 +240,16 @@ function autoGenerate() {
   const newSlots = {};
 
   for (const slot of slots) {
-    const ranked = players
-      .filter(p => !assigned.has(p.id))
-      .map(p => ({
-        p,
-        hasPos: (p.attrs?.positions || []).includes(slot.posLabel),
-        score:  scoreFor(p, slot.posLabel),
-      }))
-      .sort((a, b) => {
-        if (a.hasPos !== b.hasPos) return b.hasPos - a.hasPos;
-        return b.score - a.score;
-      });
-    if (ranked.length) {
-      newSlots[slot.key] = ranked[0].p.id;
-      assigned.add(ranked[0].p.id);
+    // Only consider players who have this exact position listed
+    const eligible = players
+      .filter(p => !assigned.has(p.id) && (p.attrs?.positions || []).includes(slot.posLabel))
+      .sort((a, b) => scoreFor(b, slot.posLabel) - scoreFor(a, slot.posLabel));
+
+    if (eligible.length) {
+      newSlots[slot.key] = eligible[0].id;
+      assigned.add(eligible[0].id);
     }
+    // No match → slot stays empty
   }
 
   lineup.slots = newSlots;
