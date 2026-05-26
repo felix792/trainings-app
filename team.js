@@ -29,6 +29,16 @@ if (!team) {
   const lineupCount = (team.lineups || []).length;
   document.getElementById('lineupCount').textContent = lineupCount === 1 ? '1 lineup' : lineupCount + ' lineups';
 
+  const lg = team.liveGame;
+  const liveGameMeta = document.getElementById('liveGameMeta');
+  if (lg && lg.status && lg.status !== 'finished') {
+    const statusLabel = lg.status === 'first_half' ? '1st half' : lg.status === 'half_time' ? 'Half time' : lg.status === 'second_half' ? '2nd half' : 'In progress';
+    liveGameMeta.textContent = (lg.opponent ? 'vs ' + lg.opponent + ' · ' : '') + statusLabel;
+    liveGameMeta.style.color = 'var(--green)';
+  } else {
+    liveGameMeta.textContent = 'no active game';
+  }
+
   const playCount = (team.plays || []).length;
   document.getElementById('playCount').textContent = playCount === 1 ? '1 play' : playCount + ' plays';
 
@@ -49,6 +59,7 @@ if (!team) {
     });
   }
 
+  navigate('goToLiveGame',  'livegame.html?teamId=' + teamId);
   navigate('goToLineups',   'lineups.html?id='   + teamId);
   navigate('goToPlayers',   'players.html?id='   + teamId);
   navigate('goToExercises', 'exercises.html?id=' + teamId);
@@ -94,6 +105,7 @@ const PERM_MAP = {
   points:    'goToPoints',
   cards:     'goToCards',
   blackbox:  'goToBlackbox',
+  livegame:  'goToLiveGame',
 };
 
 function applyPlayerPermissions(permissions) {
