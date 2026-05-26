@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lineups</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="theme-color" content="#16a34a" />
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <a id="backLink" href="index.html" class="back-link" aria-label="Back to team">
+          <span class="back-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+          <span class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4V12c0 5-4 8.5-8 10C8 20.5 4 17 4 12V6z"/></svg></span>
+          <span class="logo-text" id="backTeamName">TactIQ</span>
+        </a>
+      </div>
+      <button class="btn-primary" id="openAddLineup">+ Add Lineup</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="notFound" style="display:none;" class="hero">
+      <h2>Team not found</h2>
+      <a href="index.html" class="btn-primary" style="text-decoration:none;">Back to Home</a>
+    </div>
+
+    <div id="pageContent">
+      <div class="team-hero">
+        <h1 class="team-headline">Lineups</h1>
+        <p id="teamMeta" class="team-meta"></p>
+      </div>
+
+      <div id="lineupsEmpty" class="players-empty" style="display:none;">
+        <p>No lineups yet. Add your first lineup to get started.</p>
+      </div>
+
+      <ul class="players-list" id="lineupsList"></ul>
+    </div>
+  </main>
+
+  <!-- Add Lineup Modal -->
+  <div class="modal-backdrop" id="lineupModalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h3>Add Lineup</h3>
+        <button class="modal-close" id="closeLineupModal" aria-label="Close"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <label for="lineupNameInput">Lineup name</label>
+        <input type="text" id="lineupNameInput" placeholder="e.g. vs FC Bayern" maxlength="60" autocomplete="off" />
+        <p class="input-error" id="lineupInputError"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelLineupModal">Cancel</button>
+        <button class="btn-primary" id="addLineupBtn">Add Lineup</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="lineups.js"></script>
+</body>
+</html>
