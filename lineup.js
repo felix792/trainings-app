@@ -95,6 +95,77 @@ const FORMATIONS = {
   ],
 };
 
+// ── Custom formation parser ──
+function getLinePosLabels(lineIdx, totalLines, count) {
+  const isDefense = lineIdx === 0;
+  const isAttack  = lineIdx === totalLines - 1;
+
+  if (isDefense) {
+    if (count === 1) return ['CB'];
+    if (count === 2) return ['CB', 'CB'];
+    if (count === 3) return ['CB', 'CB', 'CB'];
+    if (count === 4) return ['LB', 'CB', 'CB', 'RB'];
+    if (count === 5) return ['LB', 'CB', 'CB', 'CB', 'RB'];
+    return Array(count).fill('CB');
+  }
+
+  if (isAttack) {
+    if (count === 1) return ['ST'];
+    if (count === 2) return ['ST', 'ST'];
+    if (count === 3) return ['LW', 'ST', 'RW'];
+    return Array(count).fill('ST');
+  }
+
+  // Middle lines
+  const midLines = totalLines - 2;
+  const midIdx   = lineIdx - 1;
+  let base;
+  if (midLines === 1) {
+    base = 'CM';
+  } else {
+    const rel = midIdx / (midLines - 1);
+    base = rel < 0.34 ? 'CDM' : rel > 0.66 ? 'CAM' : 'CM';
+  }
+
+  if (count === 1) return [base];
+  if (count === 2) return [base, base];
+  if (count === 3) return base === 'CM' ? ['LM', 'CM', 'RM'] : [base, base, base];
+  if (count === 4) return ['LM', base, base, 'RM'];
+  if (count === 5) return ['LM', base, base, base, 'RM'];
+  return Array(count).fill(base);
+}
+
+function parseFormationString(str) {
+  const nums = str.trim().split('-').map(Number);
+  if (nums.length < 2 || nums.some(n => isNaN(n) || n < 1 || n > 6)) return null;
+  const total = nums.reduce((a, b) => a + b, 0);
+  if (total < 2 || total > 10) return null;
+
+  const slots = [{ key: 'GK', posLabel: 'GK', x: 50, y: 88 }];
+  const N = nums.length;
+
+  for (let li = 0; li < N; li++) {
+    const count  = nums[li];
+    const relY   = N === 1 ? 0.5 : li / (N - 1);
+    const y      = Math.round(72 - (72 - 16) * relY);
+    const labels = getLinePosLabels(li, N, count);
+    const xStep  = 80 / (count + 1);
+    for (let i = 0; i < count; i++) {
+      slots.push({
+        key:      `L${li}_${i}`,
+        posLabel: labels[i],
+        x:        Math.round(10 + xStep * (i + 1)),
+        y,
+      });
+    }
+  }
+  return slots;
+}
+
+function getSlotsForFormation(f) {
+  return FORMATIONS[f] || parseFormationString(f) || [];
+}
+
 // ── Attribute weights per position for scoring ──
 const POS_WEIGHTS = {
   GK:  { defensiveAbility:2, physicalAbility:1.5, awareness:1.5, oneVsOneDefensive:1 },
@@ -170,24 +241,44 @@ if (!lineup) {
 
 // ── Formation bar ──
 function initFormationBar() {
-  const bar = document.getElementById('formationBar');
+  const bar         = document.getElementById('formationBar');
+  const customInput = document.getElementById('customFormInput');
+  const applyBtn    = document.getElementById('applyCustomForm');
+
   bar.innerHTML = Object.keys(FORMATIONS).map(f => `
     <button class="lu-form-btn${lineup.formation === f ? ' lu-form-active' : ''}" data-f="${f}">${f}</button>
   `).join('');
+
+  if (!FORMATIONS[lineup.formation]) customInput.value = lineup.formation;
+
   bar.addEventListener('click', e => {
     const btn = e.target.closest('[data-f]');
     if (!btn) return;
     lineup.formation = btn.dataset.f;
     persistLineup();
     bar.querySelectorAll('.lu-form-btn').forEach(b => b.classList.toggle('lu-form-active', b.dataset.f === lineup.formation));
+    customInput.value = '';
     renderSlots();
   });
+
+  applyBtn.addEventListener('click', () => {
+    const val = customInput.value.trim();
+    if (!val) return;
+    const parsed = parseFormationString(val);
+    if (!parsed) { alert('Invalid formation. Use numbers separated by dashes, e.g. 4-2-4'); return; }
+    lineup.formation = val;
+    persistLineup();
+    bar.querySelectorAll('.lu-form-btn').forEach(b => b.classList.remove('lu-form-active'));
+    renderSlots();
+  });
+
+  customInput.addEventListener('keydown', e => { if (e.key === 'Enter') applyBtn.click(); });
 }
 
 // ── Render slots on pitch ──
 function renderSlots() {
   const pitch  = document.getElementById('luPitch');
-  const slots  = FORMATIONS[lineup.formation] || [];
+  const slots  = getSlotsForFormation(lineup.formation);
   const players = team.players || [];
 
   // Remove old slots
@@ -235,7 +326,7 @@ function autoGenerate() {
   const players = (team.players || []).filter(p => p.name);
   if (!players.length) { alert('No players in your team yet.'); return; }
 
-  const slots    = FORMATIONS[lineup.formation] || [];
+  const slots    = getSlotsForFormation(lineup.formation);
   const assigned = new Set();
   const newSlots = {};
 
