@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Game</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="theme-color" content="#16a34a" />
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <a id="backLink" href="index.html" class="back-link" aria-label="Back">
+          <span class="back-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+          <span class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4V12c0 5-4 8.5-8 10C8 20.5 4 17 4 12V6z"/></svg></span>
+          <span class="logo-text" id="backTeamName">TactIQ</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="notFound" style="display:none;" class="hero">
+      <h2>Team not found</h2>
+      <a href="index.html" class="btn-primary" style="text-decoration:none;">Back</a>
+    </div>
+
+    <!-- ── Setup Phase ── -->
+    <div id="setupPhase" style="display:none;">
+      <div class="team-hero">
+        <h1 class="team-headline">Live Game</h1>
+        <p class="team-meta" id="setupTeamMeta"></p>
+      </div>
+
+      <div class="lg-setup-form">
+        <div class="lg-form-group">
+          <label class="lg-form-label">Opponent</label>
+          <input type="text" class="lg-form-input" id="opponentInput" placeholder="e.g. FC Barcelona" autocomplete="off" />
+        </div>
+        <div class="lg-form-row">
+          <div class="lg-form-group">
+            <label class="lg-form-label">Date</label>
+            <input type="date" class="lg-form-input" id="dateInput" />
+          </div>
+          <div class="lg-form-group">
+            <label class="lg-form-label">Venue</label>
+            <div class="lg-venue-toggle">
+              <button class="lg-venue-btn lg-venue-active" id="venueHomeBtn">Home</button>
+              <button class="lg-venue-btn" id="venueAwayBtn">Away</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lu-formation-bar" id="setupFormBar"></div>
+      <div class="lu-custom-form-row">
+        <input type="text" class="lu-custom-form-input" id="lgCustomFormInput" placeholder="e.g. 4-2-4" maxlength="20" />
+        <button class="btn-secondary btn-sm" id="lgApplyCustomForm">Apply</button>
+      </div>
+
+      <div class="lu-pitch-wrap">
+        <div class="lu-pitch" id="setupPitch">
+          <svg class="lu-pitch-svg" viewBox="0 0 300 430" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="300" height="430" fill="#2d7a3a"/>
+            <rect x="15" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="69" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="123" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="177" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="231" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="15" y="15" width="270" height="400" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <line x1="15" y1="215" x2="285" y2="215" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="215" r="45" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="215" r="3" fill="rgba(255,255,255,0.75)"/>
+            <rect x="75" y="15" width="150" height="70" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <rect x="110" y="15" width="80" height="28" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="58" r="2.5" fill="rgba(255,255,255,0.75)"/>
+            <path d="M 108 85 A 42 42 0 0 0 192 85" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <rect x="75" y="345" width="150" height="70" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <rect x="110" y="387" width="80" height="28" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="372" r="2.5" fill="rgba(255,255,255,0.75)"/>
+            <path d="M 108 345 A 42 42 0 0 1 192 345" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 15 25 A 10 10 0 0 1 25 15" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 275 15 A 10 10 0 0 1 285 25" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 285 405 A 10 10 0 0 1 275 415" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 25 415 A 10 10 0 0 1 15 405" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <rect x="115" y="5" width="70" height="12" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+            <rect x="115" y="413" width="70" height="12" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="lg-setup-footer">
+        <button class="btn-primary lg-kickoff-btn" id="kickOffBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Kick Off
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Game Phase ── -->
+    <div id="gamePhase" style="display:none;">
+      <div class="lg-scoreboard">
+        <div class="lg-score-team">
+          <span class="lg-score-teamname" id="lgUsName">Us</span>
+          <span class="lg-score-num" id="lgUsScore">0</span>
+          <div class="lg-score-btns">
+            <button class="lg-score-btn" id="lgUsMinus" aria-label="Remove goal">−</button>
+            <button class="lg-score-btn lg-score-add" id="lgUsPlus" aria-label="Add goal">+</button>
+          </div>
+        </div>
+        <div class="lg-timer-block">
+          <span class="lg-timer" id="lgTimer">0:00</span>
+          <span class="lg-half-badge" id="lgHalfBadge">1st</span>
+        </div>
+        <div class="lg-score-team lg-score-team-right">
+          <span class="lg-score-teamname" id="lgOppName">Opp</span>
+          <span class="lg-score-num" id="lgOppScore">0</span>
+          <div class="lg-score-btns">
+            <button class="lg-score-btn" id="lgOppMinus" aria-label="Remove goal">−</button>
+            <button class="lg-score-btn lg-score-add" id="lgOppPlus" aria-label="Add goal">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="lu-pitch-wrap">
+        <div class="lu-pitch" id="gamePitch">
+          <svg class="lu-pitch-svg" viewBox="0 0 300 430" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="300" height="430" fill="#2d7a3a"/>
+            <rect x="15" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="69" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="123" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="177" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="231" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="15" y="15" width="270" height="400" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <line x1="15" y1="215" x2="285" y2="215" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="215" r="45" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="215" r="3" fill="rgba(255,255,255,0.75)"/>
+            <rect x="75" y="15" width="150" height="70" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <rect x="110" y="15" width="80" height="28" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="58" r="2.5" fill="rgba(255,255,255,0.75)"/>
+            <path d="M 108 85 A 42 42 0 0 0 192 85" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <rect x="75" y="345" width="150" height="70" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <rect x="110" y="387" width="80" height="28" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="372" r="2.5" fill="rgba(255,255,255,0.75)"/>
+            <path d="M 108 345 A 42 42 0 0 1 192 345" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 15 25 A 10 10 0 0 1 25 15" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 275 15 A 10 10 0 0 1 285 25" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 285 405 A 10 10 0 0 1 275 415" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 25 415 A 10 10 0 0 1 15 405" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <rect x="115" y="5" width="70" height="12" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+            <rect x="115" y="413" width="70" height="12" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="lg-game-actions">
+        <button class="btn-secondary btn-sm" id="lgSubBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H3"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h18"/></svg>
+          Substitution
+        </button>
+        <button class="btn-primary" id="lgHalfBtn">Half Time</button>
+      </div>
+      <div class="lg-abandon-row">
+        <button class="lg-abandon-btn" id="lgAbandonBtn">Abandon game</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Setup player picker -->
+  <div class="lu-picker-backdrop" id="setupPickerBackdrop">
+    <div class="lu-picker" id="setupPickerPanel">
+      <div class="lu-picker-header">
+        <span class="lu-picker-title" id="setupPickerTitle">Choose Player</span>
+        <button class="modal-close" id="closeSetupPicker">&times;</button>
+      </div>
+      <div class="lu-picker-list" id="setupPickerList"></div>
+    </div>
+  </div>
+
+  <!-- Stat modal -->
+  <div class="lu-picker-backdrop" id="statBackdrop">
+    <div class="lu-picker lg-stat-panel" id="statPanel">
+      <div class="lu-picker-header">
+        <div class="lg-stat-header-info">
+          <span class="lu-picker-title" id="statPlayerName">Player</span>
+          <span class="lg-stat-minutes" id="statMinutes"></span>
+        </div>
+        <button class="modal-close" id="closeStatPanel">&times;</button>
+      </div>
+      <div class="lg-stat-body" id="statBody"></div>
+    </div>
+  </div>
+
+  <!-- Sub: pick player off -->
+  <div class="lu-picker-backdrop" id="subOffBackdrop">
+    <div class="lu-picker" id="subOffPanel">
+      <div class="lu-picker-header">
+        <span class="lu-picker-title">Sub Off — who leaves?</span>
+        <button class="modal-close" id="closeSubOff">&times;</button>
+      </div>
+      <div class="lu-picker-list" id="subOffList"></div>
+    </div>
+  </div>
+
+  <!-- Sub: pick player on -->
+  <div class="lu-picker-backdrop" id="subOnBackdrop">
+    <div class="lu-picker" id="subOnPanel">
+      <div class="lu-picker-header">
+        <span class="lu-picker-title" id="subOnTitle">Sub On — who comes on?</span>
+        <button class="modal-close" id="closeSubOn">&times;</button>
+      </div>
+      <div class="lu-picker-list" id="subOnList"></div>
+    </div>
+  </div>
+
+  <script src="livegame.js"></script>
+</body>
+</html>
