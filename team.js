@@ -26,6 +26,9 @@ if (!team) {
   const exerciseCount = (team.exercises || []).length;
   document.getElementById('exerciseCount').textContent = exerciseCount === 1 ? '1 exercise' : exerciseCount + ' exercises';
 
+  const lineupCount = (team.lineups || []).length;
+  document.getElementById('lineupCount').textContent = lineupCount === 1 ? '1 lineup' : lineupCount + ' lineups';
+
   const playCount = (team.plays || []).length;
   document.getElementById('playCount').textContent = playCount === 1 ? '1 play' : playCount + ' plays';
 
@@ -46,6 +49,7 @@ if (!team) {
     });
   }
 
+  navigate('goToLineups',   'lineups.html?id='   + teamId);
   navigate('goToPlayers',   'players.html?id='   + teamId);
   navigate('goToExercises', 'exercises.html?id=' + teamId);
   navigate('goToPlays',     'plays.html?id='     + teamId);
@@ -84,6 +88,7 @@ if (!team) {
 const PERM_MAP = {
   players:   'goToPlayers',
   exercises: 'goToExercises',
+  lineups:   'goToLineups',
   plays:     'goToPlays',
   stats:     'goToStats',
   points:    'goToPoints',
