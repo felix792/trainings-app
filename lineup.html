@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lineup</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="theme-color" content="#16a34a" />
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <a id="backLink" href="index.html" class="back-link" aria-label="Back to lineups">
+          <span class="back-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+          <span class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4V12c0 5-4 8.5-8 10C8 20.5 4 17 4 12V6z"/></svg></span>
+          <span class="logo-text" id="backTeamName">TactIQ</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="notFound" style="display:none;" class="hero">
+      <h2>Lineup not found</h2>
+      <a id="notFoundBack" href="index.html" class="btn-primary" style="text-decoration:none;">Back</a>
+    </div>
+
+    <div id="pageContent">
+      <div class="team-hero">
+        <h1 class="team-headline" id="lineupName"></h1>
+        <p class="team-meta" id="lineupMeta"></p>
+      </div>
+
+      <!-- Formation selector -->
+      <div class="lu-formation-bar" id="formationBar"></div>
+
+      <!-- Pitch actions -->
+      <div class="lu-actions">
+        <button class="btn-secondary btn-sm" id="autoGenBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Auto Generate
+        </button>
+        <button class="btn-secondary btn-sm" id="downloadLineupBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+
+      <!-- Pitch -->
+      <div class="lu-pitch-wrap" id="pitchWrap">
+        <div class="lu-pitch" id="luPitch">
+          <svg class="lu-pitch-svg" viewBox="0 0 300 430" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="300" height="430" fill="#2d7a3a"/>
+            <!-- Stripes -->
+            <rect x="15" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="69" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="123" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="177" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <rect x="231" y="15" width="27" height="400" fill="rgba(0,0,0,0.04)"/>
+            <!-- Outline -->
+            <rect x="15" y="15" width="270" height="400" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Center line -->
+            <line x1="15" y1="215" x2="285" y2="215" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Center circle -->
+            <circle cx="150" cy="215" r="45" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <circle cx="150" cy="215" r="3" fill="rgba(255,255,255,0.75)"/>
+            <!-- Penalty area top -->
+            <rect x="75" y="15" width="150" height="70" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Goal area top -->
+            <rect x="110" y="15" width="80" height="28" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Penalty spot top -->
+            <circle cx="150" cy="58" r="2.5" fill="rgba(255,255,255,0.75)"/>
+            <!-- Penalty arc top -->
+            <path d="M 108 85 A 42 42 0 0 1 192 85" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Penalty area bottom -->
+            <rect x="75" y="345" width="150" height="70" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Goal area bottom -->
+            <rect x="110" y="387" width="80" height="28" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Penalty spot bottom -->
+            <circle cx="150" cy="372" r="2.5" fill="rgba(255,255,255,0.75)"/>
+            <!-- Penalty arc bottom -->
+            <path d="M 108 345 A 42 42 0 0 0 192 345" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Corner arcs -->
+            <path d="M 15 25 A 10 10 0 0 1 25 15" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 275 15 A 10 10 0 0 1 285 25" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 285 405 A 10 10 0 0 1 275 415" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <path d="M 25 415 A 10 10 0 0 1 15 405" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+            <!-- Goals -->
+            <rect x="115" y="5" width="70" height="12" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+            <rect x="115" y="413" width="70" height="12" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+          </svg>
+          <!-- slots injected here by JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Player picker bottom sheet -->
+  <div class="lu-picker-backdrop" id="pickerBackdrop">
+    <div class="lu-picker" id="pickerPanel">
+      <div class="lu-picker-header">
+        <span class="lu-picker-title" id="pickerTitle">Choose Player</span>
+        <button class="modal-close" id="closePicker">&times;</button>
+      </div>
+      <div class="lu-picker-list" id="pickerList"></div>
+    </div>
+  </div>
+
+  <script src="lineup.js"></script>
+</body>
+</html>
