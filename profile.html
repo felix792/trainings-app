@@ -70,6 +70,23 @@
     </div>
   </main>
 
+  <!-- Sign-out confirmation modal -->
+  <div id="signOutModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Sign Out</h3>
+        <button class="modal-close" id="signOutModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted);font-size:0.97rem;">Are you sure you want to sign out of TactIQ?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="signOutCancel">Cancel</button>
+        <button class="btn-primary btn-danger" id="signOutConfirm">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
   <script src="profile.js"></script>
 </body>
 </html>
