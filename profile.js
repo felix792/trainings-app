@@ -75,7 +75,10 @@ window.DB_READY.then(async () => {
   }
 
   // Sign out
-  document.getElementById('signOutBtn').addEventListener('click', () => {
-    if (confirm('Sign out of TactIQ?')) firebase.auth().signOut();
-  });
+  const signOutModal = document.getElementById('signOutModal');
+  document.getElementById('signOutBtn').addEventListener('click', () => signOutModal.classList.add('active'));
+  document.getElementById('signOutModalClose').addEventListener('click', () => signOutModal.classList.remove('active'));
+  document.getElementById('signOutCancel').addEventListener('click', () => signOutModal.classList.remove('active'));
+  document.getElementById('signOutConfirm').addEventListener('click', () => firebase.auth().signOut());
+  signOutModal.addEventListener('click', e => { if (e.target === signOutModal) signOutModal.classList.remove('active'); });
 });
