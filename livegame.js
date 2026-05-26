@@ -632,10 +632,14 @@ function openStatModal(slotKey, playerId) {
   const body = document.getElementById('statBody');
   body.innerHTML = `
     <div class="lg-stat-rows">
-      ${statRow('Goals',        ps.goals        || 0, 'goals',       99)}
-      ${statRow('Assists',      ps.assists       || 0, 'assists',     99)}
-      ${statRow('Yellow Cards', ps.yellowCards   || 0, 'yellowCards',  2)}
-      ${statRow('Red Card',     ps.redCards      || 0, 'redCards',     1)}
+      ${statRow('Goals',           ps.goals           || 0, 'goals',          99)}
+      ${statRow('Assists',         ps.assists          || 0, 'assists',        99)}
+      ${statRow('Yellow Cards',    ps.yellowCards      || 0, 'yellowCards',     2)}
+      ${statRow('Red Card',        ps.redCards         || 0, 'redCards',        1)}
+      ${statRow('Duels Won',       ps.duelsWon         || 0, 'duelsWon',       99)}
+      ${statRow('Duels Lost',      ps.duelsLost        || 0, 'duelsLost',      99)}
+      ${statRow('Chances Created', ps.chancesCreated   || 0, 'chancesCreated', 99)}
+      ${statRow('Mistakes',        ps.mistakes         || 0, 'mistakes',       99)}
     </div>
     <button class="btn-secondary lg-sub-from-stat" id="subFromStatBtn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H3"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h18"/></svg>
