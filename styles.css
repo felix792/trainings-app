@@ -2358,3 +2358,242 @@ canvas {
   .sp-nav-active { background: transparent; border-bottom-color: var(--green); }
   .sp-content { padding: 20px 16px; }
 }
+
+/* ── Lineup page ── */
+.lu-formation-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lu-form-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.lu-form-btn:hover { border-color: var(--green); color: var(--text); }
+.lu-form-active { background: var(--green); border-color: var(--green); color: #fff; }
+
+.lu-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.lu-pitch-wrap {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 28px;
+}
+
+.lu-pitch {
+  position: relative;
+  width: 100%;
+  padding-bottom: 143%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.lu-pitch-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lu-slot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.lu-slot-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: 2px solid rgba(255,255,255,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, border-color 0.15s;
+}
+
+.lu-slot:hover .lu-slot-circle { transform: scale(1.08); border-color: #fff; }
+
+.lu-slot-filled .lu-slot-circle {
+  background: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.lu-slot-pos {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.3px;
+}
+
+.lu-slot-initials {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.lu-slot-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+/* ── Picker bottom sheet ── */
+.lu-picker-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.lu-picker-backdrop.active { display: flex; }
+
+.lu-picker {
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-width: 560px;
+  max-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.22s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.lu-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.lu-picker-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.lu-picker-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0 16px;
+}
+
+.lu-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.lu-picker-item:hover { background: #0e0e1a; }
+
+.lu-picker-used { opacity: 0.45; }
+
+.lu-picker-current { background: rgba(29,78,216,0.12); }
+
+.lu-picker-clear {
+  color: #ef4444;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.lu-picker-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lu-picker-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lu-picker-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lu-picker-positions {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.lu-picker-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.lu-pos-match {
+  font-size: 0.72rem;
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.lu-picker-ovr {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.lu-picker-empty {
+  padding: 32px 20px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.9rem;
+}
