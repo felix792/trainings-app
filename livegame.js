@@ -665,6 +665,10 @@ function openStatModal(slotKey, playerId) {
       ${statRow('Chances Created', ps.chancesCreated   || 0, 'chancesCreated', 99)}
       ${statRow('Mistakes',        ps.mistakes         || 0, 'mistakes',       99)}
     </div>
+  `;
+
+  const footer = document.getElementById('statFooter');
+  footer.innerHTML = `
     <button class="btn-secondary lg-sub-from-stat" id="subFromStatBtn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H3"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h18"/></svg>
       Substitution
