@@ -409,6 +409,7 @@ function updateScoreboard() {
 }
 
 // ── Timer ──
+// Display clock: always 0→45 first half, 45→90 second half (for the on-screen timer)
 function getCurrentMinute() {
   if (!liveGame) return 0;
   const { status, half1StartTs, half2StartTs } = liveGame;
@@ -416,6 +417,19 @@ function getCurrentMinute() {
   if (status === 'half_time')    return 45;
   if (status === 'second_half')  return Math.min(90, 45 + (Date.now() - half2StartTs) / 60000);
   if (status === 'finished')     return 90;
+  return 0;
+}
+
+// Real elapsed minutes for stats — uses actual timestamps, not the display clock.
+// half1RealMinutes stores how many real minutes the first half actually lasted.
+function getElapsedMinutes() {
+  if (!liveGame) return 0;
+  const { status, half1StartTs, half2StartTs } = liveGame;
+  const h1 = liveGame.half1RealMinutes != null ? liveGame.half1RealMinutes : 45;
+  if (status === 'first_half')  return (Date.now() - half1StartTs) / 60000;
+  if (status === 'half_time')   return h1;
+  if (status === 'second_half') return h1 + (Date.now() - half2StartTs) / 60000;
+  if (status === 'finished')    return liveGame.finalElapsedMinutes || 0;
   return 0;
 }
 
@@ -438,6 +452,7 @@ function onTimerTick() {
   const min = getCurrentMinute();
   updateTimerDisplay();
   if (liveGame.status === 'first_half' && min >= 45) {
+    liveGame.half1RealMinutes = 45;
     liveGame.status = 'half_time';
     stopTimer();
     persistState();
@@ -490,6 +505,7 @@ function adjustScore(side, delta) {
 function onHalfBtnClick() {
   const s = liveGame.status;
   if (s === 'first_half') {
+    liveGame.half1RealMinutes = (Date.now() - liveGame.half1StartTs) / 60000;
     liveGame.status = 'half_time';
     stopTimer();
     persistState();
@@ -509,7 +525,8 @@ function onHalfBtnClick() {
 
 function endGame() {
   stopTimer();
-  const finalMin = getCurrentMinute();
+  const finalMin = getElapsedMinutes();
+  liveGame.finalElapsedMinutes = finalMin;
 
   liveGame.minutesAccrued = liveGame.minutesAccrued || {};
   for (const playerId of Object.values(liveGame.activeSquad)) {
@@ -692,7 +709,7 @@ function getPlayerMinutes(playerId) {
   const inSquad = Object.values(liveGame.activeSquad).includes(playerId);
   if (inSquad) {
     const entryMin = liveGame.playerEntryMinute[playerId] || 0;
-    return accrued + Math.max(0, getCurrentMinute() - entryMin);
+    return accrued + Math.max(0, getElapsedMinutes() - entryMin);
   }
   return accrued;
 }
@@ -790,7 +807,7 @@ function openSubPickOn(slotKey) {
 }
 
 function performSub(slotKey, newPlayerId) {
-  const minute      = Math.round(getCurrentMinute());
+  const minute      = getElapsedMinutes();
   const oldPlayerId = liveGame.activeSquad[slotKey];
 
   if (oldPlayerId) {
