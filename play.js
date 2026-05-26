@@ -150,6 +150,18 @@ function initBoard() {
     render();
   });
 
+  document.getElementById('downloadBoard').addEventListener('click', () => {
+    const prevSelected = selected;
+    selected = null;
+    render();
+    const link = document.createElement('a');
+    link.download = (play.name || 'play').replace(/[^a-z0-9]/gi, '_') + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    selected = prevSelected;
+    render();
+  });
+
   canvas.addEventListener('mousedown',  onPointerDown);
   canvas.addEventListener('mousemove',  onPointerMove);
   canvas.addEventListener('mouseup',    onPointerUp);
