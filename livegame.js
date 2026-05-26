@@ -229,6 +229,9 @@ if (!team) {
 
   if (liveGame && liveGame.status !== 'finished') {
     game = (team.games || []).find(g => g.id === liveGame.gameId) || null;
+    // Migrate old data format if needed
+    if (!liveGame.playerGameEntryMin) liveGame.playerGameEntryMin = {};
+    if (!liveGame.playerTotalMin)     liveGame.playerTotalMin     = {};
     if (liveGame.status === 'setup') {
       setupFormation = liveGame.formation || '4-3-3';
       setupSlots     = liveGame.slots || {};
@@ -355,26 +358,25 @@ function kickOff() {
     playerStats: [],
   };
 
-  const now = Date.now();
   liveGame = {
     gameId,
     opponent,
     date,
-    isHome:            venueIsHome,
-    formation:         setupFormation,
-    activeSquad:       { ...setupSlots },
-    status:            'first_half',
-    half1StartTs:      now,
-    half2StartTs:      null,
-    scoreUs:           0,
-    scoreOpp:          0,
-    playerEntryRealTs: {},
-    playerTotalMs:     {},
-    substitutions:     [],
+    isHome:             venueIsHome,
+    formation:          setupFormation,
+    activeSquad:        { ...setupSlots },
+    status:             'first_half',
+    half1StartTs:       Date.now(),
+    half2StartTs:       null,
+    scoreUs:            0,
+    scoreOpp:           0,
+    playerGameEntryMin: {},
+    playerTotalMin:     {},
+    substitutions:      [],
   };
 
   for (const playerId of Object.values(liveGame.activeSquad)) {
-    if (playerId) liveGame.playerEntryRealTs[playerId] = now;
+    if (playerId) liveGame.playerGameEntryMin[playerId] = 0;
   }
 
   persistState();
@@ -421,42 +423,41 @@ function getCurrentMinute() {
   return 0;
 }
 
-// ── Minutes tracking helpers ──
-// Each active player has a real timestamp in playerEntryRealTs[id].
-// playerTotalMs[id] stores finalized ms for players who have been subbed off or at breaks.
+// ── Minutes tracking (game-clock based) ──
+// playerGameEntryMin[id] = game-clock minute when the player entered the pitch.
+// playerTotalMin[id]     = accumulated minutes already finalized (from subs / half breaks).
+//
+// "Half Time" always finalizes to minute 45, "End Game" to minute 90, regardless of
+// how much real time actually passed — so skipping through the game still gives full minutes.
 
-function finalizeActivePlayerTime() {
-  const now = Date.now();
-  liveGame.playerEntryRealTs = liveGame.playerEntryRealTs || {};
-  liveGame.playerTotalMs     = liveGame.playerTotalMs     || {};
+function finalizeAtMinute(endMinute) {
+  liveGame.playerGameEntryMin = liveGame.playerGameEntryMin || {};
+  liveGame.playerTotalMin     = liveGame.playerTotalMin     || {};
   for (const playerId of Object.values(liveGame.activeSquad)) {
     if (!playerId) continue;
-    const entryTs = liveGame.playerEntryRealTs[playerId];
-    if (entryTs) {
-      liveGame.playerTotalMs[playerId] = (liveGame.playerTotalMs[playerId] || 0) + (now - entryTs);
-      delete liveGame.playerEntryRealTs[playerId];
-    }
+    const entry = liveGame.playerGameEntryMin[playerId] ?? endMinute;
+    liveGame.playerTotalMin[playerId] = (liveGame.playerTotalMin[playerId] || 0) + Math.max(0, endMinute - entry);
+    delete liveGame.playerGameEntryMin[playerId];
   }
 }
 
-function startActivePlayerTime() {
-  const now = Date.now();
-  liveGame.playerEntryRealTs = liveGame.playerEntryRealTs || {};
+function setEntryMinute(startMinute) {
+  liveGame.playerGameEntryMin = liveGame.playerGameEntryMin || {};
   for (const playerId of Object.values(liveGame.activeSquad)) {
-    if (playerId) liveGame.playerEntryRealTs[playerId] = now;
+    if (playerId) liveGame.playerGameEntryMin[playerId] = startMinute;
   }
 }
 
 function writeMinutesToStats() {
   if (!game) return;
   game.playerStats = game.playerStats || [];
-  for (const [playerId, ms] of Object.entries(liveGame.playerTotalMs || {})) {
+  for (const [playerId, mins] of Object.entries(liveGame.playerTotalMin || {})) {
     let ps = game.playerStats.find(x => x.playerId === playerId);
     if (!ps) {
       ps = { playerId, goals:0, assists:0, minutesPlayed:0, yellowCards:0, redCards:0, duelsWon:0, duelsLost:0, chancesCreated:0, mistakes:0 };
       game.playerStats.push(ps);
     }
-    ps.minutesPlayed = Math.round(ms / 60000);
+    ps.minutesPlayed = Math.round(mins);
   }
 }
 
@@ -479,7 +480,7 @@ function onTimerTick() {
   const min = getCurrentMinute();
   updateTimerDisplay();
   if (liveGame.status === 'first_half' && min >= 45) {
-    finalizeActivePlayerTime();
+    finalizeAtMinute(45);
     liveGame.status = 'half_time';
     stopTimer();
     persistState();
@@ -532,14 +533,14 @@ function adjustScore(side, delta) {
 function onHalfBtnClick() {
   const s = liveGame.status;
   if (s === 'first_half') {
-    finalizeActivePlayerTime();
+    finalizeAtMinute(45);
     liveGame.status = 'half_time';
     stopTimer();
     persistState();
     updateHalfBtn();
     updateTimerDisplay();
   } else if (s === 'half_time') {
-    startActivePlayerTime();
+    setEntryMinute(45);
     liveGame.status     = 'second_half';
     liveGame.half2StartTs = Date.now();
     persistState();
@@ -553,7 +554,7 @@ function onHalfBtnClick() {
 
 function endGame() {
   stopTimer();
-  finalizeActivePlayerTime();
+  finalizeAtMinute(90);
   writeMinutesToStats();
   liveGame.status = 'finished';
   persistState();
@@ -711,10 +712,10 @@ function closeStatModal() {
 }
 
 function getPlayerMinutes(playerId) {
-  let totalMs = (liveGame.playerTotalMs || {})[playerId] || 0;
-  const entryTs = (liveGame.playerEntryRealTs || {})[playerId];
-  if (entryTs) totalMs += Date.now() - entryTs;
-  return Math.round(totalMs / 60000);
+  let total = (liveGame.playerTotalMin || {})[playerId] || 0;
+  const entry = (liveGame.playerGameEntryMin || {})[playerId];
+  if (entry != null) total += Math.max(0, getCurrentMinute() - entry);
+  return Math.round(total);
 }
 
 // ═══════════════════════════════════════════════
@@ -810,30 +811,26 @@ function openSubPickOn(slotKey) {
 }
 
 function performSub(slotKey, newPlayerId) {
-  const now         = Date.now();
+  const minute      = getCurrentMinute();
   const oldPlayerId = liveGame.activeSquad[slotKey];
 
-  liveGame.playerEntryRealTs = liveGame.playerEntryRealTs || {};
-  liveGame.playerTotalMs     = liveGame.playerTotalMs     || {};
+  liveGame.playerGameEntryMin = liveGame.playerGameEntryMin || {};
+  liveGame.playerTotalMin     = liveGame.playerTotalMin     || {};
 
-  // Finalize outgoing player's time
+  // Lock in outgoing player's minutes up to this game-clock minute
   if (oldPlayerId) {
-    const entryTs = liveGame.playerEntryRealTs[oldPlayerId];
-    if (entryTs) {
-      liveGame.playerTotalMs[oldPlayerId] = (liveGame.playerTotalMs[oldPlayerId] || 0) + (now - entryTs);
-      delete liveGame.playerEntryRealTs[oldPlayerId];
-    }
-    // Write their current minutes to stats immediately
+    const entry = liveGame.playerGameEntryMin[oldPlayerId] ?? minute;
+    liveGame.playerTotalMin[oldPlayerId] = (liveGame.playerTotalMin[oldPlayerId] || 0) + Math.max(0, minute - entry);
+    delete liveGame.playerGameEntryMin[oldPlayerId];
     writeMinutesToStats();
   }
 
-  // Start tracking incoming player
-  liveGame.activeSquad[slotKey]             = newPlayerId;
-  liveGame.playerEntryRealTs[newPlayerId]   = now;
+  // Incoming player starts counting from this game-clock minute
+  liveGame.activeSquad[slotKey]              = newPlayerId;
+  liveGame.playerGameEntryMin[newPlayerId]   = minute;
 
-  const minute = Math.round(getCurrentMinute());
   liveGame.substitutions = liveGame.substitutions || [];
-  liveGame.substitutions.push({ minute, off: oldPlayerId, on: newPlayerId, slotKey });
+  liveGame.substitutions.push({ minute: Math.round(minute), off: oldPlayerId, on: newPlayerId, slotKey });
 
   persistState();
   renderGamePitch();
