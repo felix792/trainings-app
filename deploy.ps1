@@ -1,7 +1,7 @@
 $token   = Read-Host "GitHub Personal Access Token"
 $repo    = "felix792/trainings-app"
 $baseDir = $PSScriptRoot
-$files   = @("db.js", "player.js", "player.html", "players.html", "team.html", "team.js", "settings.html", "settings.js", "profile.html", "profile.js", "cards.html", "cards.js", "blackbox.html", "blackbox.js", "styles.css", "sw.js")
+$files   = @("db.js", "player.js", "player.html", "players.html", "team.html", "team.js", "settings.html", "settings.js", "profile.html", "profile.js", "cards.html", "cards.js", "blackbox.html", "blackbox.js", "exercises.html", "exercises.js", "exercise.html", "exercise.js", "plays.html", "plays.js", "play.html", "play.js", "lineups.html", "lineups.js", "lineup.html", "lineup.js", "livegame.html", "livegame.js", "styles.css", "sw.js")
 $headers = @{
   Authorization = "token $token"
   Accept        = "application/vnd.github.v3+json"
