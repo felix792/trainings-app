@@ -2375,7 +2375,7 @@ canvas {
 }
 
 .lu-custom-form-input {
-  flex: 1;
+  width: 110px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
