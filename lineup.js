@@ -239,15 +239,18 @@ function autoGenerate() {
   const assigned = new Set();
   const newSlots = {};
 
-  // Priority order — fill most constrained positions first
-  const priority = ['GK','LB','RB','CDM','LW','RW','CB','CM','LM','RM','CAM','CF','ST'];
-  const sorted   = [...slots].sort((a, b) => priority.indexOf(a.posLabel) - priority.indexOf(b.posLabel));
-
-  for (const slot of sorted) {
+  for (const slot of slots) {
     const ranked = players
       .filter(p => !assigned.has(p.id))
-      .map(p => ({ p, score: scoreFor(p, slot.posLabel) }))
-      .sort((a, b) => b.score - a.score);
+      .map(p => ({
+        p,
+        hasPos: (p.attrs?.positions || []).includes(slot.posLabel),
+        score:  scoreFor(p, slot.posLabel),
+      }))
+      .sort((a, b) => {
+        if (a.hasPos !== b.hasPos) return b.hasPos - a.hasPos;
+        return b.score - a.score;
+      });
     if (ranked.length) {
       newSlots[slot.key] = ranked[0].p.id;
       assigned.add(ranked[0].p.id);
