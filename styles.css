@@ -2848,7 +2848,7 @@ canvas {
 .lg-ind-red    { background: #dc2626; }
 
 /* ── Stat modal panel ── */
-.lg-stat-panel { max-height: 80vh; }
+.lg-stat-panel { max-height: 82vh; }
 
 .lg-stat-header-info {
   display: flex;
@@ -2862,7 +2862,15 @@ canvas {
 }
 
 .lg-stat-body {
-  padding: 12px 0 8px;
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 0 0;
+}
+
+.lg-stat-footer {
+  flex-shrink: 0;
+  padding: 10px 20px 16px;
+  border-top: 1px solid var(--border);
 }
 
 .lg-stat-rows {
@@ -2918,7 +2926,6 @@ canvas {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 4px 20px 8px;
-  width: calc(100% - 40px);
+  width: 100%;
   justify-content: center;
 }
