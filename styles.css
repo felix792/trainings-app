@@ -2364,8 +2364,30 @@ canvas {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 10px;
+}
+
+.lu-custom-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 16px;
 }
+
+.lu-custom-form-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 7px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.lu-custom-form-input::placeholder { color: var(--text-muted); }
+.lu-custom-form-input:focus { border-color: var(--green); }
 
 .lu-form-btn {
   background: var(--surface);
