@@ -143,11 +143,12 @@ function initBoard() {
 
   document.getElementById('clearBoard').addEventListener('click', () => {
     if (elements.length === 0) return;
-    if (!confirm('Clear the entire board?')) return;
-    elements = [];
-    selected = null;
-    persistDrawing();
-    render();
+    showConfirm('Clear the entire board?', () => {
+      elements = [];
+      selected = null;
+      persistDrawing();
+      render();
+    });
   });
 
   document.getElementById('downloadBoard').addEventListener('click', () => {
