@@ -1,5 +1,24 @@
 const STORAGE_KEY = 'football_coach_teams';
 
+// ── Constants (must be before any code that uses them) ──
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_NAMES   = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+const TYPE_META   = {
+  training: { label: 'Training', color: '#16a34a' },
+  match:    { label: 'Match',    color: '#3b82f6' },
+  meeting:  { label: 'Meeting',  color: '#eab308' },
+  other:    { label: 'Other',    color: '#64748b' },
+};
+const TODAY = new Date().toISOString().split('T')[0];
+
+// ── State ──
+let curYear      = new Date().getFullYear();
+let curMonth     = new Date().getMonth();
+let canEdit      = false;
+let selectedDate = null;
+let editingId    = null;
+let selectedType = 'training';
+
 function loadTeams() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
 }
@@ -24,27 +43,6 @@ if (!team) {
   document.getElementById('pageContent').style.display = '';
   init();
 }
-
-// ── Constants ──
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DAY_NAMES   = ['Mo','Tu','We','Th','Fr','Sa','Su'];
-
-const TYPE_META = {
-  training: { label: 'Training',  color: '#16a34a' },
-  match:    { label: 'Match',     color: '#3b82f6' },
-  meeting:  { label: 'Meeting',   color: '#eab308' },
-  other:    { label: 'Other',     color: '#64748b' },
-};
-
-// ── State ──
-let curYear  = new Date().getFullYear();
-let curMonth = new Date().getMonth();
-let canEdit  = false;      // set by DB_READY
-let selectedDate = null;
-let editingId    = null;
-let selectedType = 'training';
-
-const TODAY = new Date().toISOString().split('T')[0];
 
 // ── Data helpers ──
 function getEvents() {
