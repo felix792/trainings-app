@@ -2814,6 +2814,29 @@ canvas {
   transition: all 0.15s;
 }
 
+/* Recurrence selector */
+.cal-recur-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cal-recur-btn {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cal-recur-btn.cal-recur-active {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: #fff;
+}
+
 /* Event form */
 .cal-form {
   padding: 16px;
