@@ -66,8 +66,16 @@ if (!team) {
   navigate('goToPlays',     'plays.html?id='     + teamId);
   navigate('goToStats',     'stats.html?id='     + teamId);
   navigate('goToPoints',    'points.html?id='    + teamId);
+  navigate('goToCalendar', 'calendar.html?id=' + teamId);
   document.getElementById('goToCards').href     = 'cards.html?id='     + teamId;
   document.getElementById('goToBlackbox').href  = 'blackbox.html?id='  + teamId;
+
+  // Calendar upcoming count
+  const calEvents = (team.calendar || []).filter(e => e.date >= new Date().toISOString().split('T')[0]);
+  const calMeta   = document.getElementById('calendarMeta');
+  if (calEvents.length === 0) calMeta.textContent = 'no upcoming events';
+  else if (calEvents.length === 1) calMeta.textContent = '1 upcoming event';
+  else calMeta.textContent = calEvents.length + ' upcoming events';
 
   // â”€â”€ Apply role-based UI after DB is ready â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   window.DB_READY.then(() => {
@@ -106,6 +114,7 @@ const PERM_MAP = {
   cards:     'goToCards',
   blackbox:  'goToBlackbox',
   livegame:  'goToLiveGame',
+  calendar:  'goToCalendar',
 };
 
 function applyPlayerPermissions(permissions) {
