@@ -400,6 +400,7 @@ function showGame() {
   updateHalfBtn();
   renderGamePitch();
   initGameActions();
+  initGoalModal();
   initStatModal();
   initSubModals();
 }
@@ -520,12 +521,151 @@ function initGameActions() {
 
 function adjustScore(side, delta) {
   if (side === 'us') {
-    liveGame.scoreUs = Math.max(0, (liveGame.scoreUs || 0) + delta);
-    if (game) game.scoreUs = liveGame.scoreUs;
-  } else {
-    liveGame.scoreOpp = Math.max(0, (liveGame.scoreOpp || 0) + delta);
-    if (game) game.scoreOpp = liveGame.scoreOpp;
+    if (delta > 0) { openGoalScorerPicker(); return; }
+    else { undoLastGoal(); return; }
   }
+  liveGame.scoreOpp = Math.max(0, (liveGame.scoreOpp || 0) + delta);
+  if (game) game.scoreOpp = liveGame.scoreOpp;
+  updateScoreboard();
+  persistState();
+}
+
+// ── Goal attribution ──
+let pendingGoalMinute = 0;
+let pendingGoalScorer = null;
+
+function initGoalModal() {
+  document.getElementById('closeGoalScorer').addEventListener('click', () =>
+    document.getElementById('goalScorerBackdrop').classList.remove('active'));
+  document.getElementById('goalScorerBackdrop').addEventListener('click', e => {
+    if (e.target === document.getElementById('goalScorerBackdrop'))
+      document.getElementById('goalScorerBackdrop').classList.remove('active');
+  });
+  document.getElementById('closeGoalAssist').addEventListener('click', () =>
+    document.getElementById('goalAssistBackdrop').classList.remove('active'));
+  document.getElementById('goalAssistBackdrop').addEventListener('click', e => {
+    if (e.target === document.getElementById('goalAssistBackdrop'))
+      document.getElementById('goalAssistBackdrop').classList.remove('active');
+  });
+}
+
+function openGoalScorerPicker() {
+  pendingGoalMinute = Math.round(getCurrentMinute());
+  pendingGoalScorer = null;
+  const players = team.players || [];
+  const list    = document.getElementById('goalScorerList');
+  list.innerHTML = '';
+
+  Object.values(liveGame.activeSquad).filter(Boolean).forEach(pid => {
+    const player = players.find(p => p.id === pid);
+    if (!player) return;
+    const item = document.createElement('div');
+    item.className = 'lu-picker-item';
+    item.innerHTML = `
+      <div class="lu-picker-avatar">${nameInitials(player.name)}</div>
+      <div class="lu-picker-info"><span class="lu-picker-name">${escHtml(player.name)}</span></div>`;
+    item.addEventListener('click', () => {
+      pendingGoalScorer = pid;
+      document.getElementById('goalScorerBackdrop').classList.remove('active');
+      openGoalAssistPicker();
+    });
+    list.appendChild(item);
+  });
+
+  const og = document.createElement('div');
+  og.className = 'lu-picker-item lu-picker-item-muted';
+  og.innerHTML = `<div class="lu-picker-info"><span class="lu-picker-name">Own Goal</span></div>`;
+  og.addEventListener('click', () => {
+    pendingGoalScorer = 'own_goal';
+    document.getElementById('goalScorerBackdrop').classList.remove('active');
+    openGoalAssistPicker();
+  });
+  list.appendChild(og);
+
+  document.getElementById('goalScorerBackdrop').classList.add('active');
+}
+
+function openGoalAssistPicker() {
+  const players = team.players || [];
+  const list    = document.getElementById('goalAssistList');
+  list.innerHTML = '';
+
+  Object.values(liveGame.activeSquad).filter(Boolean).forEach(pid => {
+    if (pid === pendingGoalScorer) return;
+    const player = players.find(p => p.id === pid);
+    if (!player) return;
+    const item = document.createElement('div');
+    item.className = 'lu-picker-item';
+    item.innerHTML = `
+      <div class="lu-picker-avatar">${nameInitials(player.name)}</div>
+      <div class="lu-picker-info"><span class="lu-picker-name">${escHtml(player.name)}</span></div>`;
+    item.addEventListener('click', () => {
+      document.getElementById('goalAssistBackdrop').classList.remove('active');
+      confirmGoal(pid);
+    });
+    list.appendChild(item);
+  });
+
+  const na = document.createElement('div');
+  na.className = 'lu-picker-item lu-picker-item-muted';
+  na.innerHTML = `<div class="lu-picker-info"><span class="lu-picker-name">No Assist</span></div>`;
+  na.addEventListener('click', () => {
+    document.getElementById('goalAssistBackdrop').classList.remove('active');
+    confirmGoal(null);
+  });
+  list.appendChild(na);
+
+  document.getElementById('goalAssistBackdrop').classList.add('active');
+}
+
+function confirmGoal(assistId) {
+  liveGame.scoreUs = (liveGame.scoreUs || 0) + 1;
+  if (game) game.scoreUs = liveGame.scoreUs;
+
+  if (game) {
+    game.events = game.events || [];
+    game.events.push({ type: 'goal', minute: pendingGoalMinute, scorer: pendingGoalScorer, assist: assistId || null });
+
+    game.playerStats = game.playerStats || [];
+    const ensurePs = (pid) => {
+      let ps = game.playerStats.find(x => x.playerId === pid);
+      if (!ps) {
+        ps = { playerId: pid, goals:0, assists:0, minutesPlayed:0, yellowCards:0, redCards:0, duelsWon:0, duelsLost:0, chancesCreated:0, mistakes:0 };
+        game.playerStats.push(ps);
+      }
+      return ps;
+    };
+    if (pendingGoalScorer && pendingGoalScorer !== 'own_goal') ensurePs(pendingGoalScorer).goals++;
+    if (assistId) ensurePs(assistId).assists++;
+  }
+
+  updateScoreboard();
+  persistState();
+  renderGamePitch();
+}
+
+function undoLastGoal() {
+  const events = (game && game.events) || [];
+  const ri = [...events].reverse().findIndex(e => e.type === 'goal');
+
+  if (ri !== -1) {
+    const idx = events.length - 1 - ri;
+    const evt = events[idx];
+    events.splice(idx, 1);
+    if (game) {
+      if (evt.scorer && evt.scorer !== 'own_goal') {
+        const ps = game.playerStats.find(x => x.playerId === evt.scorer);
+        if (ps) ps.goals = Math.max(0, (ps.goals || 0) - 1);
+      }
+      if (evt.assist) {
+        const ps = game.playerStats.find(x => x.playerId === evt.assist);
+        if (ps) ps.assists = Math.max(0, (ps.assists || 0) - 1);
+      }
+    }
+  }
+
+  liveGame.scoreUs = Math.max(0, (liveGame.scoreUs || 0) - 1);
+  if (game) game.scoreUs = liveGame.scoreUs;
   updateScoreboard();
   persistState();
 }
@@ -677,7 +817,7 @@ function openStatModal(slotKey, playerId) {
     </button>
   `;
 
-  const EVENT_STAT_MAP = { goals: 'goal', assists: 'assist', yellowCards: 'yellow_card', redCards: 'red_card' };
+  const CARD_EVENT_MAP = { yellowCards: 'yellow_card', redCards: 'red_card' };
 
   body.querySelectorAll('.lg-stat-adj').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -690,7 +830,7 @@ function openStatModal(slotKey, playerId) {
       ps2[stat] = Math.max(0, Math.min(max, prevVal + delta));
       btn.closest('.lg-stat-row').querySelector('.lg-stat-val').textContent = ps2[stat];
 
-      const evtType = EVENT_STAT_MAP[stat];
+      const evtType = CARD_EVENT_MAP[stat];
       if (evtType) {
         game.events = game.events || [];
         if (delta > 0 && ps2[stat] > prevVal) {
