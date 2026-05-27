@@ -2666,11 +2666,9 @@ canvas {
   min-height: 58px;
   padding: 5px 3px 4px;
   cursor: pointer;
-  border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   transition: background 0.12s;
 }
-.cal-day:nth-child(7n) { border-right: none; }
 .cal-day:hover { background: var(--surface); }
 .cal-day-other { opacity: 0.3; }
 .cal-day-today .cal-day-num {
