@@ -126,7 +126,7 @@
     document.getElementById('db-signin-btn').addEventListener('click', () => {
       firebase.auth()
         .signInWithPopup(new firebase.auth.GoogleAuthProvider())
-        .catch((err) => alert('Sign-in failed: ' + err.message));
+        .catch((err) => showToast('Sign-in failed: ' + err.message, 'error'));
     });
   }
 
@@ -293,7 +293,7 @@
     document.getElementById('mem-join-more').addEventListener('click', () => showJoinTeam(user, ''));
     if (canClose) document.getElementById('mem-cancel').addEventListener('click', hideOverlay);
     document.getElementById('mem-signout').addEventListener('click', () => {
-      if (confirm('Sign out of TactIQ?')) firebase.auth().signOut();
+      showConfirm('Sign out of TactIQ?', () => firebase.auth().signOut(), { confirmLabel: 'Sign Out' });
     });
   }
 
@@ -471,3 +471,45 @@
     await firebase.firestore().collection('invites').doc(code).delete();
   };
 })();
+
+// ── In-app UI utilities (replaces alert / confirm / prompt) ──────────────────
+
+window.showToast = function (msg, type) {
+  const existing = document.getElementById('tiq-toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'tiq-toast';
+  el.className = 'tiq-toast tiq-toast-' + (type || 'error');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('tiq-toast-show'));
+  setTimeout(() => {
+    el.classList.remove('tiq-toast-show');
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+};
+
+window.showConfirm = function (msg, onConfirm, opts) {
+  opts = opts || {};
+  const label  = opts.confirmLabel || 'Confirm';
+  const danger = opts.danger !== false;
+  const existing = document.getElementById('tiq-confirm-backdrop');
+  if (existing) existing.remove();
+  const backdrop = document.createElement('div');
+  backdrop.id = 'tiq-confirm-backdrop';
+  backdrop.className = 'modal-backdrop active';
+  backdrop.innerHTML =
+    '<div class="modal">' +
+      '<div class="modal-body" style="padding:20px 20px 8px">' +
+        '<p style="color:var(--text-muted);font-size:0.97rem;margin:0">' + msg + '</p>' +
+      '</div>' +
+      '<div class="modal-footer">' +
+        '<button class="btn-secondary" id="tiqConfirmCancel">Cancel</button>' +
+        '<button class="btn-primary' + (danger ? ' btn-danger' : '') + '" id="tiqConfirmOk">' + label + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(backdrop);
+  document.getElementById('tiqConfirmCancel').addEventListener('click', () => backdrop.remove());
+  document.getElementById('tiqConfirmOk').addEventListener('click', () => { backdrop.remove(); onConfirm(); });
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.remove(); });
+};
