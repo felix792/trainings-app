@@ -82,11 +82,8 @@ function scheduleSave() {
 }
 
 // ── Timeline ──
-const TL_ICONS = { goal: '⚽', assist: '👟', yellow_card: '🟨', red_card: '🟥', sub: '↕' };
-const TL_LABELS = { goal: 'Goal', assist: 'Assist', yellow_card: 'Yellow Card', red_card: 'Red Card', sub: 'Substitution' };
-
 let tlHidden = false;
-let tlActiveFilters = new Set(['goal', 'assist', 'yellow_card', 'red_card', 'sub']);
+let tlActiveFilters = new Set(['goal', 'card', 'sub']);
 
 function renderTimeline(players) {
   const events = game.events || [];
@@ -94,7 +91,8 @@ function renderTimeline(players) {
 
   document.getElementById('timelineSection').style.display = '';
 
-  const playerName = (id) => {
+  const pname = (id) => {
+    if (!id || id === 'own_goal') return 'Own Goal';
     const p = players.find(x => x.id === id);
     return p ? p.name : 'Unknown';
   };
@@ -106,8 +104,9 @@ function renderTimeline(players) {
     track.style.display = '';
     track.innerHTML = '';
 
+    const filterType = (e) => (e.type === 'yellow_card' || e.type === 'red_card') ? 'card' : e.type;
     const sorted = [...events]
-      .filter(e => tlActiveFilters.has(e.type))
+      .filter(e => tlActiveFilters.has(filterType(e)))
       .sort((a, b) => a.minute - b.minute);
 
     if (!sorted.length) {
@@ -119,44 +118,59 @@ function renderTimeline(players) {
       const item = document.createElement('div');
       item.className = 'tl-item tl-type-' + evt.type;
 
-      let detail = '';
-      if (evt.type === 'sub') {
-        detail = `<span class="tl-sub-off">${escapeHtml(playerName(evt.off))}</span> → <span class="tl-sub-on">${escapeHtml(playerName(evt.on))}</span>`;
-      } else {
-        detail = `<span class="tl-player">${escapeHtml(playerName(evt.playerId))}</span>`;
+      if (evt.type === 'goal') {
+        const ownGoal = evt.scorer === 'own_goal';
+        const scorerName = pname(evt.scorer);
+        const assistText = evt.assist ? pname(evt.assist) : 'No assist';
+        item.innerHTML = `
+          <div class="tl-row">
+            <span class="tl-min">${evt.minute}'</span>
+            <span class="tl-icon">⚽${ownGoal ? '<span class="tl-og-badge">OG</span>' : ''}</span>
+            <span class="tl-goal-summary">
+              <span class="tl-goal-scorer">${escapeHtml(scorerName)}</span>
+              ${evt.assist ? `<span class="tl-goal-assist">▸ ${escapeHtml(assistText)}</span>` : ''}
+            </span>
+          </div>`;
+      } else if (evt.type === 'yellow_card') {
+        item.innerHTML = `
+          <div class="tl-row">
+            <span class="tl-min">${evt.minute}'</span>
+            <span class="tl-icon">🟨</span>
+            <span class="tl-text">${escapeHtml(pname(evt.playerId))}</span>
+          </div>`;
+      } else if (evt.type === 'red_card') {
+        item.innerHTML = `
+          <div class="tl-row">
+            <span class="tl-min">${evt.minute}'</span>
+            <span class="tl-icon">🟥</span>
+            <span class="tl-text">${escapeHtml(pname(evt.playerId))}</span>
+          </div>`;
+      } else if (evt.type === 'sub') {
+        item.innerHTML = `
+          <div class="tl-row">
+            <span class="tl-min">${evt.minute}'</span>
+            <span class="tl-icon tl-sub-icon">↕</span>
+            <span class="tl-text"><span class="tl-sub-off">${escapeHtml(pname(evt.off))}</span> → <span class="tl-sub-on">${escapeHtml(pname(evt.on))}</span></span>
+          </div>`;
       }
 
-      item.innerHTML = `
-        <span class="tl-min">${evt.minute}'</span>
-        <span class="tl-dot"></span>
-        <span class="tl-icon">${TL_ICONS[evt.type] || '·'}</span>
-        <span class="tl-detail">${detail}</span>
-      `;
       track.appendChild(item);
     });
   }
 
   drawTrack();
 
-  // Toggle hide/show stats
-  const toggleBtn = document.getElementById('tlToggleBtn');
-  toggleBtn.addEventListener('click', () => {
+  document.getElementById('tlToggleBtn').addEventListener('click', () => {
     tlHidden = !tlHidden;
-    toggleBtn.textContent = tlHidden ? 'Show Stats' : 'Hide Stats';
+    document.getElementById('tlToggleBtn').textContent = tlHidden ? 'Show' : 'Hide';
     drawTrack();
   });
 
-  // Filter chips
   document.getElementById('tlFilters').querySelectorAll('.tl-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const type = btn.dataset.type;
-      if (tlActiveFilters.has(type)) {
-        tlActiveFilters.delete(type);
-        btn.classList.remove('tl-filter-active');
-      } else {
-        tlActiveFilters.add(type);
-        btn.classList.add('tl-filter-active');
-      }
+      if (tlActiveFilters.has(type)) { tlActiveFilters.delete(type); btn.classList.remove('tl-filter-active'); }
+      else                           { tlActiveFilters.add(type);    btn.classList.add('tl-filter-active'); }
       drawTrack();
     });
   });
