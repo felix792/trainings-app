@@ -2614,6 +2614,99 @@ canvas {
 .tiq-toast-success { background: #16a34a; }
 .tiq-toast-info    { background: #475569; }
 
+/* ── Match Timeline ───────────────────────────────────────────────────────── */
+.tl-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.tl-filter-btn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.tl-filter-btn.tl-filter-active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.tl-track {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  padding-left: 52px;
+}
+.tl-track::before {
+  content: '';
+  position: absolute;
+  left: 30px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--border);
+  border-radius: 2px;
+}
+.tl-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  position: relative;
+}
+.tl-item + .tl-item {
+  border-top: 1px solid var(--border);
+}
+.tl-min {
+  position: absolute;
+  left: -52px;
+  width: 36px;
+  text-align: right;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.tl-dot {
+  position: absolute;
+  left: -22px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--bg);
+}
+.tl-type-goal      .tl-dot { background: #16a34a; }
+.tl-type-assist    .tl-dot { background: #3b82f6; }
+.tl-type-yellow_card .tl-dot { background: #eab308; }
+.tl-type-red_card  .tl-dot { background: #dc2626; }
+.tl-type-sub       .tl-dot { background: #8b5cf6; }
+.tl-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tl-detail {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.tl-player {
+  font-weight: 600;
+}
+.tl-sub-off {
+  color: #dc2626;
+  font-weight: 600;
+}
+.tl-sub-on {
+  color: #16a34a;
+  font-weight: 600;
+}
+
 .lu-picker-positions {
   font-size: 0.78rem;
   color: var(--text-muted);
