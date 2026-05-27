@@ -2814,6 +2814,82 @@ canvas {
   transition: all 0.15s;
 }
 
+/* ── RSVP section ────────────────────────────────────────────────────────── */
+.cal-rsvp-section {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.cal-rsvp-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cal-rsvp-btn {
+  padding: 5px 11px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.cal-rsvp-btn:hover { border-color: #64748b; color: var(--text); }
+.cal-rsvp-btn-attending  { background: #16a34a; border-color: #16a34a; color: #fff !important; }
+.cal-rsvp-btn-unsure     { background: #eab308; border-color: #eab308; color: #fff !important; }
+.cal-rsvp-btn-not-coming { background: #ef4444; border-color: #ef4444; color: #fff !important; }
+.cal-rsvp-reason-wrap {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: flex-start;
+}
+.cal-rsvp-reason-input {
+  flex: 1;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  padding: 7px 10px;
+  resize: none;
+  font-family: inherit;
+  line-height: 1.4;
+}
+.cal-rsvp-reason-input:focus { outline: none; border-color: #3b82f6; }
+.cal-rsvp-myreason {
+  margin-top: 5px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.cal-rsvp-summary {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.cal-rsvp-names {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cal-rsvp-names-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+.cal-rsvp-names-row em { color: var(--text-muted); font-style: italic; }
+.cal-rsvp-names-icon { font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+.attending-icon  { color: #16a34a; }
+.unsure-icon     { color: #eab308; }
+.not-coming-icon { color: #ef4444; }
+
 /* Recurrence selector */
 .cal-recur-row {
   display: flex;
