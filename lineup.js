@@ -265,7 +265,7 @@ function initFormationBar() {
     const val = customInput.value.trim();
     if (!val) return;
     const parsed = parseFormationString(val);
-    if (!parsed) { alert('Invalid formation. Use numbers separated by dashes, e.g. 4-2-4'); return; }
+    if (!parsed) { showToast('Invalid formation. Use numbers separated by dashes, e.g. 4-2-4', 'error'); return; }
     lineup.formation = val;
     persistLineup();
     bar.querySelectorAll('.lu-form-btn').forEach(b => b.classList.remove('lu-form-active'));
@@ -324,7 +324,7 @@ function initActions() {
 
 function autoGenerate() {
   const players = (team.players || []).filter(p => p.name);
-  if (!players.length) { alert('No players in your team yet.'); return; }
+  if (!players.length) { showToast('No players in your team yet.', 'error'); return; }
 
   const slots    = getSlotsForFormation(lineup.formation);
   const assigned = new Set();
