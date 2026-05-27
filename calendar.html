@@ -98,10 +98,34 @@
           </div>
         </div>
         <div class="lg-form-group">
+          <label class="lg-form-label">Repeat</label>
+          <div class="cal-recur-row" id="evtRecurRow">
+            <button class="cal-recur-btn cal-recur-active" data-recur="none">Does not repeat</button>
+            <button class="cal-recur-btn" data-recur="weekly">Weekly</button>
+            <button class="cal-recur-btn" data-recur="biweekly">Every 2 weeks</button>
+            <button class="cal-recur-btn" data-recur="monthly">Monthly</button>
+          </div>
+        </div>
+        <div class="lg-form-group">
           <label class="lg-form-label">Notes (optional)</label>
           <textarea class="lg-form-input" id="evtNotes" rows="3" placeholder="Any additional info…" maxlength="500" style="resize:none;height:72px;"></textarea>
         </div>
         <button class="btn-primary" id="saveEventBtn" style="width:100%;">Save Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recurring event delete choice modal -->
+  <div class="lu-picker-backdrop" id="recurDeleteBackdrop">
+    <div class="lu-picker" id="recurDeletePanel" style="max-width:340px;">
+      <div class="lu-picker-header">
+        <span class="lu-picker-title">Delete recurring event</span>
+        <button class="modal-close" id="closeRecurDelete">&times;</button>
+      </div>
+      <div style="padding:16px;">
+        <p style="color:var(--text-muted);font-size:.88rem;margin:0 0 16px;">How would you like to delete?</p>
+        <button class="btn-primary" id="recurDelThisBtn" style="width:100%;margin-bottom:10px;">This date only</button>
+        <button class="btn-primary" id="recurDelAllBtn" style="width:100%;background:var(--danger,#ef4444);border-color:var(--danger,#ef4444);">All occurrences</button>
       </div>
     </div>
   </div>
