@@ -677,6 +677,8 @@ function openStatModal(slotKey, playerId) {
     </button>
   `;
 
+  const EVENT_STAT_MAP = { goals: 'goal', assists: 'assist', yellowCards: 'yellow_card', redCards: 'red_card' };
+
   body.querySelectorAll('.lg-stat-adj').forEach(btn => {
     btn.addEventListener('click', () => {
       const stat  = btn.dataset.stat;
@@ -684,8 +686,21 @@ function openStatModal(slotKey, playerId) {
       const max   = parseInt(btn.dataset.max,   10);
       const ps2   = game.playerStats.find(x => x.playerId === activeStatPlayerId);
       if (!ps2) return;
-      ps2[stat] = Math.max(0, Math.min(max, (ps2[stat] || 0) + delta));
+      const prevVal = ps2[stat] || 0;
+      ps2[stat] = Math.max(0, Math.min(max, prevVal + delta));
       btn.closest('.lg-stat-row').querySelector('.lg-stat-val').textContent = ps2[stat];
+
+      const evtType = EVENT_STAT_MAP[stat];
+      if (evtType) {
+        game.events = game.events || [];
+        if (delta > 0 && ps2[stat] > prevVal) {
+          game.events.push({ type: evtType, playerId: activeStatPlayerId, minute: Math.round(getCurrentMinute()) });
+        } else if (delta < 0 && ps2[stat] < prevVal) {
+          const ri = [...game.events].reverse().findIndex(e => e.type === evtType && e.playerId === activeStatPlayerId);
+          if (ri !== -1) game.events.splice(game.events.length - 1 - ri, 1);
+        }
+      }
+
       persistState();
       renderGamePitch();
     });
@@ -837,6 +852,11 @@ function performSub(slotKey, newPlayerId) {
 
   liveGame.substitutions = liveGame.substitutions || [];
   liveGame.substitutions.push({ minute: Math.round(minute), off: oldPlayerId, on: newPlayerId, slotKey });
+
+  if (game) {
+    game.events = game.events || [];
+    game.events.push({ type: 'sub', minute: Math.round(minute), off: oldPlayerId, on: newPlayerId });
+  }
 
   persistState();
   renderGamePitch();
