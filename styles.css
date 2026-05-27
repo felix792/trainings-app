@@ -2622,7 +2622,7 @@ canvas {
   margin-bottom: 16px;
 }
 .tl-filter-btn {
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -2639,72 +2639,77 @@ canvas {
 .tl-track {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  position: relative;
-  padding-left: 52px;
-}
-.tl-track::before {
-  content: '';
-  position: absolute;
-  left: 30px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--border);
-  border-radius: 2px;
 }
 .tl-item {
+  border-bottom: 1px solid var(--border);
+}
+.tl-item:last-child {
+  border-bottom: none;
+}
+.tl-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 0;
-  position: relative;
-}
-.tl-item + .tl-item {
-  border-top: 1px solid var(--border);
+  padding: 10px 0;
 }
 .tl-min {
-  position: absolute;
-  left: -52px;
-  width: 36px;
-  text-align: right;
+  min-width: 30px;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-muted);
-}
-.tl-dot {
-  position: absolute;
-  left: -22px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--border);
-  border: 2px solid var(--bg);
-}
-.tl-type-goal      .tl-dot { background: #16a34a; }
-.tl-type-assist    .tl-dot { background: #3b82f6; }
-.tl-type-yellow_card .tl-dot { background: #eab308; }
-.tl-type-red_card  .tl-dot { background: #dc2626; }
-.tl-type-sub       .tl-dot { background: #8b5cf6; }
-.tl-icon {
-  font-size: 1rem;
-  line-height: 1;
+  text-align: right;
   flex-shrink: 0;
 }
-.tl-detail {
+.tl-icon {
+  font-size: 1rem;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.tl-sub-icon {
+  color: #a78bfa;
+  font-size: 1.1rem;
+}
+.tl-og-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #dc2626;
+  color: #fff;
+  border-radius: 3px;
+  padding: 0 3px;
+  vertical-align: super;
+  margin-left: 1px;
+}
+.tl-text {
   font-size: 0.9rem;
   color: var(--text);
 }
-.tl-player {
-  font-weight: 600;
+.tl-goal-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.tl-sub-off {
-  color: #dc2626;
+.tl-goal-scorer {
+  font-size: 0.9rem;
   font-weight: 600;
+  color: var(--text);
 }
-.tl-sub-on {
-  color: #16a34a;
-  font-weight: 600;
+.tl-goal-assist {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.tl-sub-off { color: #f87171; font-weight: 600; }
+.tl-sub-on  { color: #4ade80; font-weight: 600; }
+
+/* ── Goal scorer picker special items ────────────────────────────────────── */
+.lu-picker-item-muted {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.lu-picker-item-muted .lu-picker-name {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .lu-picker-positions {
