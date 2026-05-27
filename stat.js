@@ -87,8 +87,8 @@ let tlActiveFilters = new Set(['goal', 'card', 'sub']);
 
 function renderTimeline(players) {
   const events = game.events || [];
-  if (!events.length) return;
 
+  // Always show the section — empty state explains what to do
   document.getElementById('timelineSection').style.display = '';
 
   const pname = (id) => {
@@ -104,13 +104,23 @@ function renderTimeline(players) {
     track.style.display = '';
     track.innerHTML = '';
 
-    const filterType = (e) => (e.type === 'yellow_card' || e.type === 'red_card') ? 'card' : e.type;
+    if (!events.length) {
+      track.innerHTML = '<p class="tl-empty">No events yet — goals, cards and subs are tracked during a Live Game.</p>';
+      return;
+    }
+
+    // Map yellow_card / red_card → 'card' for filter; ignore old 'assist' events
+    const filterKey = (e) => {
+      if (e.type === 'yellow_card' || e.type === 'red_card') return 'card';
+      if (e.type === 'assist') return 'assist'; // filtered out — not in set
+      return e.type;
+    };
     const sorted = [...events]
-      .filter(e => tlActiveFilters.has(filterType(e)))
+      .filter(e => tlActiveFilters.has(filterKey(e)))
       .sort((a, b) => a.minute - b.minute);
 
     if (!sorted.length) {
-      track.innerHTML = '<p class="players-empty" style="margin:12px 0 4px;">No events match the selected filters.</p>';
+      track.innerHTML = '<p class="tl-empty">No events match the selected filters.</p>';
       return;
     }
 
@@ -119,16 +129,18 @@ function renderTimeline(players) {
       item.className = 'tl-item tl-type-' + evt.type;
 
       if (evt.type === 'goal') {
-        const ownGoal = evt.scorer === 'own_goal';
-        const scorerName = pname(evt.scorer);
-        const assistText = evt.assist ? pname(evt.assist) : 'No assist';
+        // Support both new format (scorer) and old format (playerId)
+        const scorer  = evt.scorer || evt.playerId || null;
+        const ownGoal = scorer === 'own_goal';
+        const scorerName  = scorer ? pname(scorer) : '–';
+        const assistName  = evt.assist ? pname(evt.assist) : null;
         item.innerHTML = `
           <div class="tl-row">
             <span class="tl-min">${evt.minute}'</span>
             <span class="tl-icon">⚽${ownGoal ? '<span class="tl-og-badge">OG</span>' : ''}</span>
             <span class="tl-goal-summary">
               <span class="tl-goal-scorer">${escapeHtml(scorerName)}</span>
-              ${evt.assist ? `<span class="tl-goal-assist">▸ ${escapeHtml(assistText)}</span>` : ''}
+              ${assistName ? `<span class="tl-goal-assist">▸ ${escapeHtml(assistName)}</span>` : ''}
             </span>
           </div>`;
       } else if (evt.type === 'yellow_card') {
@@ -150,7 +162,10 @@ function renderTimeline(players) {
           <div class="tl-row">
             <span class="tl-min">${evt.minute}'</span>
             <span class="tl-icon tl-sub-icon">↕</span>
-            <span class="tl-text"><span class="tl-sub-off">${escapeHtml(pname(evt.off))}</span> → <span class="tl-sub-on">${escapeHtml(pname(evt.on))}</span></span>
+            <span class="tl-text">
+              <span class="tl-sub-off">${escapeHtml(pname(evt.off))}</span>
+              → <span class="tl-sub-on">${escapeHtml(pname(evt.on))}</span>
+            </span>
           </div>`;
       }
 
