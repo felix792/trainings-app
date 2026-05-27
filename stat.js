@@ -1,5 +1,9 @@
 const STORAGE_KEY = 'football_coach_teams';
 
+// ── Timeline state (must be declared before renderTimeline is called) ──
+let tlHidden = false;
+let tlActiveFilters = new Set(['goal', 'card', 'sub']);
+
 function loadTeams() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
 }
@@ -82,8 +86,6 @@ function scheduleSave() {
 }
 
 // ── Timeline ──
-let tlHidden = false;
-let tlActiveFilters = new Set(['goal', 'card', 'sub']);
 
 function renderTimeline(players) {
   const events = game.events || [];
