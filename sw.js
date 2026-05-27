@@ -1,4 +1,4 @@
-const CACHE = 'tactiq-v34';
+const CACHE = 'tactiq-v35';
 const ASSETS = [
   '/trainings-app/',
   '/trainings-app/index.html',
