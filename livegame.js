@@ -301,7 +301,7 @@ function initSetupFormBar() {
   applyBtn.addEventListener('click', () => {
     const val = customInput.value.trim();
     if (!val) return;
-    if (!parseFormationString(val)) { alert('Invalid formation. Use numbers separated by dashes, e.g. 4-2-4'); return; }
+    if (!parseFormationString(val)) { showToast('Invalid formation. Use numbers separated by dashes, e.g. 4-2-4', 'error'); return; }
     setupFormation = val;
     bar.querySelectorAll('.lu-form-btn').forEach(b => b.classList.remove('lu-form-active'));
     renderSetupSlots();
@@ -341,7 +341,7 @@ function renderSetupSlots() {
 function kickOff() {
   const opponent = document.getElementById('opponentInput').value.trim();
   if (!opponent) {
-    alert('Please enter the opponent name.');
+    showToast('Please enter the opponent name.', 'error');
     document.getElementById('opponentInput').focus();
     return;
   }
@@ -561,25 +561,27 @@ function endGame() {
   updateHalfBtn();
   updateTimerDisplay();
 
-  setTimeout(() => {
-    if (game && confirm('Game finished! Open the stats page?')) {
-      window.location.href = 'stat.html?teamId=' + teamId + '&gameId=' + game.id;
-    }
-  }, 200);
+  if (game) {
+    setTimeout(() => {
+      showConfirm('Game finished! Open the stats page?', () => {
+        window.location.href = 'stat.html?teamId=' + teamId + '&gameId=' + game.id;
+      }, { confirmLabel: 'View Stats', danger: false });
+    }, 200);
+  }
 }
 
 function abandonGame() {
-  if (!confirm('Abandon this game? The game will be removed from stats.')) return;
-  stopTimer();
-
-  const all = loadTeams();
-  const t   = all.find(x => x.id === teamId);
-  if (t) {
-    t.liveGame = null;
-    if (game) t.games = (t.games || []).filter(g => g.id !== game.id);
-    saveTeams(all);
-  }
-  window.location.href = 'team.html?id=' + teamId;
+  showConfirm('Abandon this game? The game will be removed from stats.', () => {
+    stopTimer();
+    const all = loadTeams();
+    const t   = all.find(x => x.id === teamId);
+    if (t) {
+      t.liveGame = null;
+      if (game) t.games = (t.games || []).filter(g => g.id !== game.id);
+      saveTeams(all);
+    }
+    window.location.href = 'team.html?id=' + teamId;
+  });
 }
 
 // ── Game pitch ──
