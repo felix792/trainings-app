@@ -10,6 +10,7 @@ const TYPE_META   = {
   other:    { label: 'Other',    color: '#64748b' },
 };
 const TODAY = new Date().toISOString().split('T')[0];
+const RECUR_LABELS = { none: 'Does not repeat', weekly: 'Weekly', biweekly: 'Every 2 weeks', monthly: 'Monthly' };
 
 // ── State ──
 let curYear      = new Date().getFullYear();
@@ -18,6 +19,10 @@ let canEdit      = false;
 let selectedDate = null;
 let editingId    = null;
 let selectedType = 'training';
+let selectedRecur = 'none';
+// For recurring delete modal
+let _recurDelEvt  = null;
+let _recurDelDate = null;
 
 function loadTeams() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
@@ -69,6 +74,59 @@ function removeEvent(id) {
   saveTeams(all);
 }
 
+function addException(eventId, dateStr) {
+  const all = loadTeams();
+  const t   = all.find(x => x.id === teamId);
+  if (!t) return;
+  const evt = (t.calendar || []).find(e => e.id === eventId);
+  if (!evt) return;
+  evt.exceptions = evt.exceptions || [];
+  if (!evt.exceptions.includes(dateStr)) evt.exceptions.push(dateStr);
+  saveTeams(all);
+}
+
+// ── Recurrence helpers ──
+function daysBetween(dateA, dateB) {
+  const a = new Date(dateA + 'T00:00:00');
+  const b = new Date(dateB + 'T00:00:00');
+  return Math.round((b - a) / 86400000);
+}
+
+function matchesDate(evt, dateStr) {
+  if (evt.date === dateStr) return true;
+  if (!evt.recurrence || evt.recurrence === 'none') return false;
+  const exceptions = evt.exceptions || [];
+  if (exceptions.includes(dateStr)) return false;
+  if (dateStr < evt.date) return false;
+
+  const diff = daysBetween(evt.date, dateStr);
+  if (evt.recurrence === 'weekly')   return diff % 7  === 0;
+  if (evt.recurrence === 'biweekly') return diff % 14 === 0;
+  if (evt.recurrence === 'monthly') {
+    const [oy, om, od] = evt.date.split('-').map(Number);
+    const [dy, dm, dd] = dateStr.split('-').map(Number);
+    return od === dd && (dy > oy || (dy === oy && dm > om));
+  }
+  return false;
+}
+
+function getEventsForDate(allEvents, dateStr) {
+  return allEvents.filter(e => matchesDate(e, dateStr));
+}
+
+// Generate occurrences of a recurring event in the next N days from a start date
+function futureOccurrences(evt, fromDate, days) {
+  const results = [];
+  if (!evt.recurrence || evt.recurrence === 'none') return results;
+  for (let i = 1; i <= days; i++) {
+    const d = new Date(fromDate + 'T00:00:00');
+    d.setDate(d.getDate() + i);
+    const ds = d.toISOString().split('T')[0];
+    if (matchesDate(evt, ds)) results.push(ds);
+  }
+  return results;
+}
+
 // ── Calendar render ──
 function renderCalendar() {
   const events = getEvents();
@@ -113,7 +171,7 @@ function renderCalendar() {
       other   = true;
     }
 
-    const dayEvents = events.filter(e => e.date === dateStr);
+    const dayEvents = getEventsForDate(events, dateStr);
     const cell = document.createElement('div');
     cell.className = 'cal-day' +
       (other ? ' cal-day-other' : '') +
@@ -153,24 +211,61 @@ function renderCalendar() {
 
 function renderUpcoming(events) {
   const wrap = document.getElementById('calUpcoming');
-  const upcoming = events
-    .filter(e => e.date >= TODAY)
-    .sort((a, b) => (a.date + (a.time||'99:99')).localeCompare(b.date + (b.time||'99:99')))
-    .slice(0, 5);
 
-  if (!upcoming.length) { wrap.innerHTML = ''; return; }
+  // Build a flat list of upcoming occurrences (next 60 days)
+  const seen = new Set();
+  const upcoming = [];
+
+  // First pass: one-time events
+  events.forEach(e => {
+    if (e.date >= TODAY && (!e.recurrence || e.recurrence === 'none')) {
+      const exceptions = e.exceptions || [];
+      if (!exceptions.includes(e.date)) {
+        upcoming.push({ date: e.date, evt: e });
+        seen.add(e.id + '|' + e.date);
+      }
+    }
+  });
+
+  // Second pass: recurring occurrences in next 60 days
+  events.forEach(e => {
+    if (!e.recurrence || e.recurrence === 'none') return;
+    // Also include the master date itself if it's upcoming
+    if (e.date >= TODAY && matchesDate(e, e.date) && !seen.has(e.id + '|' + e.date)) {
+      upcoming.push({ date: e.date, evt: e });
+      seen.add(e.id + '|' + e.date);
+    }
+    const occs = futureOccurrences(e, TODAY, 60);
+    occs.forEach(ds => {
+      const key = e.id + '|' + ds;
+      if (!seen.has(key)) {
+        upcoming.push({ date: ds, evt: e });
+        seen.add(key);
+      }
+    });
+  });
+
+  upcoming.sort((a, b) => {
+    const at = a.date + (a.evt.time || '99:99');
+    const bt = b.date + (b.evt.time || '99:99');
+    return at.localeCompare(bt);
+  });
+
+  const show = upcoming.slice(0, 5);
+  if (!show.length) { wrap.innerHTML = ''; return; }
 
   wrap.innerHTML = '<div class="cal-upcoming-title">Upcoming</div>' +
-    upcoming.map(e => {
+    show.map(({ date, evt: e }) => {
       const meta = TYPE_META[e.type] || TYPE_META.other;
-      const dateParts = e.date.split('-').map(Number);
+      const dateParts = date.split('-').map(Number);
       const dLabel = new Date(dateParts[0], dateParts[1]-1, dateParts[2])
         .toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+      const recurIcon = (e.recurrence && e.recurrence !== 'none') ? ' ↺' : '';
       return `
-        <div class="cal-upcoming-item" data-date="${escHtml(e.date)}">
+        <div class="cal-upcoming-item" data-date="${escHtml(date)}">
           <span class="cal-upcoming-bar" style="background:${meta.color};"></span>
           <div class="cal-upcoming-info">
-            <span class="cal-upcoming-name">${escHtml(e.title)}</span>
+            <span class="cal-upcoming-name">${escHtml(e.title)}${recurIcon}</span>
             <span class="cal-upcoming-meta">${dLabel}${e.time ? ' · ' + e.time : ''} · ${meta.label}</span>
           </div>
         </div>`;
@@ -197,7 +292,7 @@ function closeDayPanel() {
 }
 
 function renderDayEvents() {
-  const events    = getEvents().filter(e => e.date === selectedDate)
+  const events    = getEventsForDate(getEvents(), selectedDate)
     .sort((a, b) => (a.time||'99:99').localeCompare(b.time||'99:99'));
   const list      = document.getElementById('dayEventsList');
   const footer    = document.getElementById('dayPanelFooter');
@@ -207,11 +302,12 @@ function renderDayEvents() {
   } else {
     list.innerHTML = events.map(ev => {
       const meta = TYPE_META[ev.type] || TYPE_META.other;
+      const isRecurring = ev.recurrence && ev.recurrence !== 'none';
       return `
         <div class="cal-event-item" data-id="${escHtml(ev.id)}">
           <span class="cal-event-bar" style="background:${meta.color};"></span>
           <div class="cal-event-info">
-            <div class="cal-event-title">${escHtml(ev.title)}</div>
+            <div class="cal-event-title">${escHtml(ev.title)}${isRecurring ? ' <span style="font-size:.75rem;color:var(--text-muted);">↺ ' + escHtml(RECUR_LABELS[ev.recurrence] || '') + '</span>' : ''}</div>
             <div class="cal-event-meta">
               ${ev.time ? ev.time + ' · ' : ''}${meta.label}
               ${ev.notes ? '<br><span style="color:#64748b;font-size:0.78rem;">' + escHtml(ev.notes) + '</span>' : ''}
@@ -234,11 +330,17 @@ function renderDayEvents() {
       });
       list.querySelectorAll('.cal-evt-del-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          showConfirm('Delete this event?', () => {
-            removeEvent(btn.dataset.id);
-            renderCalendar();
-            renderDayEvents();
-          });
+          const ev = getEvents().find(e => e.id === btn.dataset.id);
+          if (!ev) return;
+          if (ev.recurrence && ev.recurrence !== 'none') {
+            openRecurDeleteModal(ev, selectedDate);
+          } else {
+            showConfirm('Delete this event?', () => {
+              removeEvent(btn.dataset.id);
+              renderCalendar();
+              renderDayEvents();
+            });
+          }
         });
       });
     }
@@ -253,10 +355,24 @@ function renderDayEvents() {
   }
 }
 
+// ── Recurring delete modal ──
+function openRecurDeleteModal(evt, dateStr) {
+  _recurDelEvt  = evt;
+  _recurDelDate = dateStr;
+  document.getElementById('recurDeleteBackdrop').classList.add('active');
+}
+
+function closeRecurDeleteModal() {
+  document.getElementById('recurDeleteBackdrop').classList.remove('active');
+  _recurDelEvt  = null;
+  _recurDelDate = null;
+}
+
 // ── Event form ──
 function openEventForm(evt) {
-  editingId    = evt ? evt.id : null;
-  selectedType = evt ? evt.type : 'training';
+  editingId     = evt ? evt.id : null;
+  selectedType  = evt ? evt.type : 'training';
+  selectedRecur = (evt && evt.recurrence) ? evt.recurrence : 'none';
 
   document.getElementById('eventFormTitle').textContent = evt ? 'Edit Event' : 'Add Event';
   document.getElementById('evtTitle').value = evt ? evt.title : '';
@@ -265,6 +381,7 @@ function openEventForm(evt) {
   document.getElementById('evtNotes').value = evt ? (evt.notes || '') : '';
 
   setSelectedType(selectedType);
+  setSelectedRecur(selectedRecur);
   document.getElementById('eventFormBackdrop').classList.add('active');
 }
 
@@ -273,9 +390,17 @@ function setSelectedType(type) {
   document.querySelectorAll('.cal-type-btn').forEach(btn => {
     const active = btn.dataset.type === type;
     btn.classList.toggle('cal-type-active', active);
-    btn.style.background   = active ? (TYPE_META[type]||TYPE_META.other).color : '';
-    btn.style.borderColor  = active ? (TYPE_META[type]||TYPE_META.other).color : '';
-    btn.style.color        = active ? '#fff' : '';
+    btn.style.background  = active ? (TYPE_META[type]||TYPE_META.other).color : '';
+    btn.style.borderColor = active ? (TYPE_META[type]||TYPE_META.other).color : '';
+    btn.style.color       = active ? '#fff' : '';
+  });
+}
+
+function setSelectedRecur(recur) {
+  selectedRecur = recur;
+  document.querySelectorAll('.cal-recur-btn').forEach(btn => {
+    const active = btn.dataset.recur === recur;
+    btn.classList.toggle('cal-recur-active', active);
   });
 }
 
@@ -289,20 +414,23 @@ function saveEvent() {
     return;
   }
 
+  const existing = editingId ? getEvents().find(e => e.id === editingId) : null;
   const evt = {
-    id:    editingId || crypto.randomUUID(),
-    date:  document.getElementById('evtDate').value || selectedDate || TODAY,
+    id:         editingId || crypto.randomUUID(),
+    date:       document.getElementById('evtDate').value || selectedDate || TODAY,
     title,
-    type:  selectedType,
-    time:  document.getElementById('evtTime').value  || null,
-    notes: document.getElementById('evtNotes').value.trim() || null,
+    type:       selectedType,
+    time:       document.getElementById('evtTime').value  || null,
+    notes:      document.getElementById('evtNotes').value.trim() || null,
+    recurrence: selectedRecur === 'none' ? null : selectedRecur,
+    exceptions: (existing && existing.exceptions) ? existing.exceptions : [],
   };
 
   persistEvent(evt);
   document.getElementById('eventFormBackdrop').classList.remove('active');
   renderCalendar();
 
-  // If the day panel is still open for this date, refresh it
+  // Refresh or open the day panel for the saved event's date
   if (selectedDate === evt.date) renderDayEvents();
   else { selectedDate = evt.date; renderDayEvents(); }
 
@@ -345,6 +473,32 @@ function init() {
 
   document.querySelectorAll('.cal-type-btn').forEach(btn => {
     btn.addEventListener('click', () => setSelectedType(btn.dataset.type));
+  });
+
+  document.querySelectorAll('.cal-recur-btn').forEach(btn => {
+    btn.addEventListener('click', () => setSelectedRecur(btn.dataset.recur));
+  });
+
+  // Recurring delete modal
+  document.getElementById('closeRecurDelete').addEventListener('click', closeRecurDeleteModal);
+  document.getElementById('recurDeleteBackdrop').addEventListener('click', e => {
+    if (e.target === document.getElementById('recurDeleteBackdrop')) closeRecurDeleteModal();
+  });
+  document.getElementById('recurDelThisBtn').addEventListener('click', () => {
+    if (!_recurDelEvt || !_recurDelDate) return;
+    addException(_recurDelEvt.id, _recurDelDate);
+    closeRecurDeleteModal();
+    renderCalendar();
+    renderDayEvents();
+  });
+  document.getElementById('recurDelAllBtn').addEventListener('click', () => {
+    if (!_recurDelEvt) return;
+    showConfirm('Delete all occurrences of this event?', () => {
+      removeEvent(_recurDelEvt.id);
+      closeRecurDeleteModal();
+      renderCalendar();
+      renderDayEvents();
+    });
   });
 
   // Check role after auth
