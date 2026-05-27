@@ -4,21 +4,38 @@ const RATINGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 let panelLocked = false;
 let modalAttr    = null;
 
+const FIELD_ATTRS = {
+  defensiveAbility:  'Defensive Ability',
+  shot:              'Shot',
+  condition:         'Condition',
+  touch:             'Touch',
+  awareness:         'Awareness',
+  oneVsOneDefensive: '1v1 Defensive',
+  oneVsOneOffensive: '1v1 Offensive',
+  moral:             'Moral',
+  speed:             'Speed',
+  physicalAbility:   'Physical Ability',
+  dribbling:         'Dribbling',
+  passing:           'Passing',
+};
+
+const GK_ATTRS = {
+  gkPositioning:   'Positioning',
+  gkShotStopping:  'Shot-stopping',
+  gkComingOffLine: 'Coming off the line',
+  gkJumping:       'Jumping & Explosiveness',
+  gkReactionSpeed: 'Reaction Speed',
+  gkSpaceControl:  'Space Control',
+  gkBuildUpPlay:   'Build-up Play',
+  gkLeadership:    'Leadership Qualities',
+  gkComposure:     'Composure under Pressure',
+};
+
 const ATTR_LABELS = {
-  defensiveAbility: 'Defensive Ability',
-  shot:             'Shot',
-  condition:        'Condition',
-  touch:            'Touch',
-  awareness:        'Awareness',
-  oneVsOneDefensive:'1v1 Defensive',
-  oneVsOneOffensive:'1v1 Offensive',
-  moral:            'Moral',
-  speed:            'Speed',
-  physicalAbility:  'Physical Ability',
-  dribbling:        'Dribbling',
-  passing:          'Passing',
-  positions:        'Positions',
-  strongFoot:       'Strong Foot',
+  ...FIELD_ATTRS,
+  ...GK_ATTRS,
+  positions:  'Positions',
+  strongFoot: 'Strong Foot',
 };
 function fmtStat(n) {
   return String(Math.min(99, Math.max(1, Math.round(n)))).padStart(2, '0');
@@ -176,8 +193,8 @@ if (!player) {
 
   if (!player.attrs) player.attrs = {};
 
-  buildRatings();
   buildPositions();
+  rebuildAttrs();
   buildStrongFoot();
   buildNotes();
   buildAttrHistory();
@@ -246,14 +263,32 @@ function buildStrongFoot() {
   });
 }
 
-// ── Numeric ratings ──
-function buildRatings() {
-  document.querySelectorAll('.rating-row').forEach((row) => {
-    const attr = row.dataset.attr;
-    const current = player.attrs[attr] || 0;
-    const card = row.closest('.attr-card');
+// ── Dynamic attribute cards (field player or GK) ──
+function isGK() {
+  return (player.attrs.positions || []).includes('GK');
+}
 
-    RATINGS.forEach((n) => {
+function rebuildAttrs() {
+  const grid    = document.getElementById('playerAttrsGrid');
+  const posCard = grid.querySelector('.attr-card-wide');
+
+  // Remove all previously injected dynamic cards
+  grid.querySelectorAll('.attr-card-dynamic').forEach(c => c.remove());
+
+  const attrsObj = isGK() ? GK_ATTRS : FIELD_ATTRS;
+
+  Object.entries(attrsObj).forEach(([attr, label]) => {
+    const card = document.createElement('div');
+    card.className = 'attr-card attr-card-dynamic';
+    card.innerHTML = `
+      <div class="attr-label">${label}</div>
+      <div class="rating-row" data-attr="${attr}"></div>
+      <div class="rating-value" id="val-${attr}">—</div>`;
+
+    const row     = card.querySelector('.rating-row');
+    const current = player.attrs[attr] || 0;
+
+    RATINGS.forEach(n => {
       const btn = document.createElement('button');
       btn.className = 'rating-btn' + (n <= current ? ' rating-btn-active' : '');
       btn.textContent = n;
@@ -279,6 +314,8 @@ function buildRatings() {
     card.addEventListener('mouseleave', () => {
       if (!panelLocked) chartPanel.classList.remove('attr-chart-visible');
     });
+
+    grid.insertBefore(card, posCard);
   });
 }
 
@@ -682,7 +719,7 @@ function buildStats() {
 
 // ── Positions ──
 function buildPositions() {
-  const grid = document.getElementById('positionsGrid');
+  const grid     = document.getElementById('positionsGrid');
   const selected = new Set(player.attrs.positions || []);
 
   POSITIONS.forEach((pos) => {
@@ -690,9 +727,26 @@ function buildPositions() {
     btn.className = 'pos-btn' + (selected.has(pos) ? ' pos-btn-active' : '');
     btn.textContent = pos;
     btn.addEventListener('click', () => {
-      if (selected.has(pos)) { selected.delete(pos); btn.classList.remove('pos-btn-active'); }
-      else                   { selected.add(pos);    btn.classList.add('pos-btn-active'); }
+      if (selected.has(pos)) {
+        selected.delete(pos);
+        btn.classList.remove('pos-btn-active');
+      } else {
+        if (pos === 'GK') {
+          // GK is exclusive — clear all other positions
+          selected.clear();
+          grid.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('pos-btn-active'));
+        } else if (selected.has('GK')) {
+          // Adding a field position — remove GK
+          selected.delete('GK');
+          grid.querySelectorAll('.pos-btn').forEach(b => {
+            if (b.textContent === 'GK') b.classList.remove('pos-btn-active');
+          });
+        }
+        selected.add(pos);
+        btn.classList.add('pos-btn-active');
+      }
       saveAttr('positions', [...selected]);
+      rebuildAttrs();
     });
     grid.appendChild(btn);
   });
