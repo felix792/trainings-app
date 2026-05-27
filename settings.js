@@ -65,7 +65,7 @@ window.DB_READY.then(() => {
       document.getElementById('invite-label').value = '';
       loadInvites();
     } catch {
-      alert('Failed to generate code. Please try again.');
+      showToast('Failed to generate code. Please try again.', 'error');
     }
     btn.disabled = false;
     btn.textContent = 'Generate Invite Code';
@@ -151,11 +151,12 @@ function renderActiveInvites(active) {
       <button class="sp-revoke-btn" data-code="${escapeHtml(inv.id)}">Revoke</button>
     </div>`).join('')}</div>`;
   el.querySelectorAll('.sp-revoke-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('Revoke this invite code?')) return;
-      btn.disabled = true;
-      await window.deleteInvite(btn.dataset.code);
-      loadInvites();
+    btn.addEventListener('click', () => {
+      showConfirm('Revoke this invite code?', async () => {
+        btn.disabled = true;
+        await window.deleteInvite(btn.dataset.code);
+        loadInvites();
+      });
     });
   });
 }
