@@ -65,10 +65,11 @@ function renderCoachView(coachUid) {
     });
 
     content.querySelectorAll('.bb-delete-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Delete this note permanently?')) return;
-        btn.disabled = true;
-        await notesRef(coachUid).doc(btn.dataset.id).delete();
+      btn.addEventListener('click', () => {
+        showConfirm('Delete this note permanently?', async () => {
+          btn.disabled = true;
+          await notesRef(coachUid).doc(btn.dataset.id).delete();
+        });
       });
     });
   }, () => {
