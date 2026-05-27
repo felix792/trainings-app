@@ -58,6 +58,8 @@ if (!game) {
   } else {
     renderStatRows(players);
   }
+
+  renderTimeline(players);
 }
 
 // ── Persist ──
@@ -77,6 +79,87 @@ function scheduleSave() {
     status.textContent = 'Saved';
     setTimeout(() => { status.textContent = ''; }, 1500);
   }, 500);
+}
+
+// ── Timeline ──
+const TL_ICONS = { goal: '⚽', assist: '👟', yellow_card: '🟨', red_card: '🟥', sub: '↕' };
+const TL_LABELS = { goal: 'Goal', assist: 'Assist', yellow_card: 'Yellow Card', red_card: 'Red Card', sub: 'Substitution' };
+
+let tlHidden = false;
+let tlActiveFilters = new Set(['goal', 'assist', 'yellow_card', 'red_card', 'sub']);
+
+function renderTimeline(players) {
+  const events = game.events || [];
+  if (!events.length) return;
+
+  document.getElementById('timelineSection').style.display = '';
+
+  const playerName = (id) => {
+    const p = players.find(x => x.id === id);
+    return p ? p.name : 'Unknown';
+  };
+
+  const track = document.getElementById('tlTrack');
+
+  function drawTrack() {
+    if (tlHidden) { track.style.display = 'none'; return; }
+    track.style.display = '';
+    track.innerHTML = '';
+
+    const sorted = [...events]
+      .filter(e => tlActiveFilters.has(e.type))
+      .sort((a, b) => a.minute - b.minute);
+
+    if (!sorted.length) {
+      track.innerHTML = '<p class="players-empty" style="margin:12px 0 4px;">No events match the selected filters.</p>';
+      return;
+    }
+
+    sorted.forEach(evt => {
+      const item = document.createElement('div');
+      item.className = 'tl-item tl-type-' + evt.type;
+
+      let detail = '';
+      if (evt.type === 'sub') {
+        detail = `<span class="tl-sub-off">${escapeHtml(playerName(evt.off))}</span> → <span class="tl-sub-on">${escapeHtml(playerName(evt.on))}</span>`;
+      } else {
+        detail = `<span class="tl-player">${escapeHtml(playerName(evt.playerId))}</span>`;
+      }
+
+      item.innerHTML = `
+        <span class="tl-min">${evt.minute}'</span>
+        <span class="tl-dot"></span>
+        <span class="tl-icon">${TL_ICONS[evt.type] || '·'}</span>
+        <span class="tl-detail">${detail}</span>
+      `;
+      track.appendChild(item);
+    });
+  }
+
+  drawTrack();
+
+  // Toggle hide/show stats
+  const toggleBtn = document.getElementById('tlToggleBtn');
+  toggleBtn.addEventListener('click', () => {
+    tlHidden = !tlHidden;
+    toggleBtn.textContent = tlHidden ? 'Show Stats' : 'Hide Stats';
+    drawTrack();
+  });
+
+  // Filter chips
+  document.getElementById('tlFilters').querySelectorAll('.tl-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.type;
+      if (tlActiveFilters.has(type)) {
+        tlActiveFilters.delete(type);
+        btn.classList.remove('tl-filter-active');
+      } else {
+        tlActiveFilters.add(type);
+        btn.classList.add('tl-filter-active');
+      }
+      drawTrack();
+    });
+  });
 }
 
 // ── Render ──
