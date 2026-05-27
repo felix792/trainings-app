@@ -88,8 +88,8 @@ let tlActiveFilters = new Set(['goal', 'card', 'sub']);
 function renderTimeline(players) {
   const events = game.events || [];
 
-  // Always show the section — empty state explains what to do
-  document.getElementById('timelineSection').style.display = '';
+  const section = document.getElementById('timelineSection');
+  section.style.display = 'block';
 
   const pname = (id) => {
     if (!id || id === 'own_goal') return 'Own Goal';
@@ -101,76 +101,72 @@ function renderTimeline(players) {
 
   function drawTrack() {
     if (tlHidden) { track.style.display = 'none'; return; }
-    track.style.display = '';
-    track.innerHTML = '';
+    track.style.display = 'block';
 
     if (!events.length) {
-      track.innerHTML = '<p class="tl-empty">No events yet — goals, cards and subs are tracked during a Live Game.</p>';
+      track.innerHTML = '<p style="color:#94a3b8;font-size:0.88rem;padding:12px 0;margin:0;">No events yet — goals, cards and subs are tracked during a Live Game.</p>';
       return;
     }
 
-    // Map yellow_card / red_card → 'card' for filter; ignore old 'assist' events
     const filterKey = (e) => {
       if (e.type === 'yellow_card' || e.type === 'red_card') return 'card';
-      if (e.type === 'assist') return 'assist'; // filtered out — not in set
       return e.type;
     };
     const sorted = [...events]
       .filter(e => tlActiveFilters.has(filterKey(e)))
-      .sort((a, b) => a.minute - b.minute);
+      .sort((a, b) => (a.minute || 0) - (b.minute || 0));
 
     if (!sorted.length) {
-      track.innerHTML = '<p class="tl-empty">No events match the selected filters.</p>';
+      track.innerHTML = '<p style="color:#94a3b8;font-size:0.88rem;padding:12px 0;margin:0;">No events match the selected filters.</p>';
       return;
     }
 
+    let html = '';
     sorted.forEach(evt => {
-      const item = document.createElement('div');
-      item.className = 'tl-item tl-type-' + evt.type;
+      const min = (evt.minute || 0) + "'";
+      const ROW_STYLE = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);';
+      const MIN_STYLE = 'min-width:30px;font-size:0.78rem;font-weight:700;color:#94a3b8;text-align:right;flex-shrink:0;';
+      const ICON_STYLE = 'width:22px;text-align:center;font-size:1rem;flex-shrink:0;';
+      const TEXT_STYLE = 'font-size:0.9rem;color:#f1f5f9;';
 
       if (evt.type === 'goal') {
-        // Support both new format (scorer) and old format (playerId)
-        const scorer  = evt.scorer || evt.playerId || null;
-        const ownGoal = scorer === 'own_goal';
-        const scorerName  = scorer ? pname(scorer) : '–';
-        const assistName  = evt.assist ? pname(evt.assist) : null;
-        item.innerHTML = `
-          <div class="tl-row">
-            <span class="tl-min">${evt.minute}'</span>
-            <span class="tl-icon">⚽${ownGoal ? '<span class="tl-og-badge">OG</span>' : ''}</span>
-            <span class="tl-goal-summary">
-              <span class="tl-goal-scorer">${escapeHtml(scorerName)}</span>
-              ${assistName ? `<span class="tl-goal-assist">▸ ${escapeHtml(assistName)}</span>` : ''}
-            </span>
-          </div>`;
+        const scorer     = evt.scorer || evt.playerId || null;
+        const ownGoal    = scorer === 'own_goal';
+        const scorerName = scorer ? pname(scorer) : '–';
+        const assistName = evt.assist ? pname(evt.assist) : null;
+        const ogBadge    = ownGoal ? ' <span style="font-size:0.6rem;font-weight:700;background:#dc2626;color:#fff;border-radius:3px;padding:0 3px;vertical-align:super;">OG</span>' : '';
+        html += `<div style="${ROW_STYLE}">
+          <span style="${MIN_STYLE}">${min}</span>
+          <span style="${ICON_STYLE}">⚽${ogBadge}</span>
+          <span style="display:flex;flex-direction:column;gap:2px;">
+            <span style="font-size:0.9rem;font-weight:600;color:#f1f5f9;">${escapeHtml(scorerName)}</span>
+            ${assistName ? `<span style="font-size:0.78rem;color:#94a3b8;">▸ ${escapeHtml(assistName)}</span>` : ''}
+          </span>
+        </div>`;
       } else if (evt.type === 'yellow_card') {
-        item.innerHTML = `
-          <div class="tl-row">
-            <span class="tl-min">${evt.minute}'</span>
-            <span class="tl-icon">🟨</span>
-            <span class="tl-text">${escapeHtml(pname(evt.playerId))}</span>
-          </div>`;
+        html += `<div style="${ROW_STYLE}">
+          <span style="${MIN_STYLE}">${min}</span>
+          <span style="${ICON_STYLE}">🟨</span>
+          <span style="${TEXT_STYLE}">${escapeHtml(pname(evt.playerId))}</span>
+        </div>`;
       } else if (evt.type === 'red_card') {
-        item.innerHTML = `
-          <div class="tl-row">
-            <span class="tl-min">${evt.minute}'</span>
-            <span class="tl-icon">🟥</span>
-            <span class="tl-text">${escapeHtml(pname(evt.playerId))}</span>
-          </div>`;
+        html += `<div style="${ROW_STYLE}">
+          <span style="${MIN_STYLE}">${min}</span>
+          <span style="${ICON_STYLE}">🟥</span>
+          <span style="${TEXT_STYLE}">${escapeHtml(pname(evt.playerId))}</span>
+        </div>`;
       } else if (evt.type === 'sub') {
-        item.innerHTML = `
-          <div class="tl-row">
-            <span class="tl-min">${evt.minute}'</span>
-            <span class="tl-icon tl-sub-icon">↕</span>
-            <span class="tl-text">
-              <span class="tl-sub-off">${escapeHtml(pname(evt.off))}</span>
-              → <span class="tl-sub-on">${escapeHtml(pname(evt.on))}</span>
-            </span>
-          </div>`;
+        html += `<div style="${ROW_STYLE}">
+          <span style="${MIN_STYLE}">${min}</span>
+          <span style="${ICON_STYLE};color:#a78bfa;">↕</span>
+          <span style="${TEXT_STYLE}">
+            <span style="color:#f87171;font-weight:600;">${escapeHtml(pname(evt.off))}</span>
+            → <span style="color:#4ade80;font-weight:600;">${escapeHtml(pname(evt.on))}</span>
+          </span>
+        </div>`;
       }
-
-      track.appendChild(item);
     });
+    track.innerHTML = html;
   }
 
   drawTrack();
