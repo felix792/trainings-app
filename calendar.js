@@ -11,18 +11,23 @@ const TYPE_META   = {
 };
 const TODAY = new Date().toISOString().split('T')[0];
 const RECUR_LABELS = { none: 'Does not repeat', weekly: 'Weekly', biweekly: 'Every 2 weeks', monthly: 'Monthly' };
+const STATUS_META = {
+  attending:  { label: '✓ Attending',  cls: 'attending'  },
+  unsure:     { label: '? Unsure',     cls: 'unsure'     },
+  not_coming: { label: '✗ Not coming', cls: 'not-coming' },
+};
 
 // ── State ──
-let curYear      = new Date().getFullYear();
-let curMonth     = new Date().getMonth();
-let canEdit      = false;
-let selectedDate = null;
-let editingId    = null;
-let selectedType = 'training';
+let curYear       = new Date().getFullYear();
+let curMonth      = new Date().getMonth();
+let canEdit       = false;
+let selectedDate  = null;
+let editingId     = null;
+let selectedType  = 'training';
 let selectedRecur = 'none';
-// For recurring delete modal
 let _recurDelEvt  = null;
 let _recurDelDate = null;
+const rsvpCache   = {};
 
 function loadTeams() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
@@ -98,14 +103,13 @@ function matchesDate(evt, dateStr) {
   const exceptions = evt.exceptions || [];
   if (exceptions.includes(dateStr)) return false;
   if (dateStr < evt.date) return false;
-
   const diff = daysBetween(evt.date, dateStr);
   if (evt.recurrence === 'weekly')   return diff % 7  === 0;
   if (evt.recurrence === 'biweekly') return diff % 14 === 0;
   if (evt.recurrence === 'monthly') {
-    const [oy, om, od] = evt.date.split('-').map(Number);
+    const [oy,, od] = evt.date.split('-').map(Number);
     const [dy, dm, dd] = dateStr.split('-').map(Number);
-    return od === dd && (dy > oy || (dy === oy && dm > om));
+    return od === dd && (dy > oy || (dy === oy && dm > Number(evt.date.split('-')[1])));
   }
   return false;
 }
@@ -114,7 +118,6 @@ function getEventsForDate(allEvents, dateStr) {
   return allEvents.filter(e => matchesDate(e, dateStr));
 }
 
-// Generate occurrences of a recurring event in the next N days from a start date
 function futureOccurrences(evt, fromDate, days) {
   const results = [];
   if (!evt.recurrence || evt.recurrence === 'none') return results;
@@ -127,6 +130,126 @@ function futureOccurrences(evt, fromDate, days) {
   return results;
 }
 
+// ── RSVP helpers ──
+async function loadRsvpDoc(evtId, dateStr) {
+  const key = `${evtId}_${dateStr}`;
+  if (rsvpCache[key]) return rsvpCache[key];
+  try {
+    const docId = `${teamId}_${evtId}_${dateStr}`;
+    const snap  = await firebase.firestore().collection('rsvps').doc(docId).get();
+    const data  = snap.exists ? snap.data() : { responses: {} };
+    rsvpCache[key] = data;
+    return data;
+  } catch {
+    return { responses: {} };
+  }
+}
+
+async function loadAndRenderRsvp(evtId, dateStr) {
+  const container = document.getElementById(`rsvp-${evtId}-${dateStr}`);
+  if (!container) return;
+  const data    = await loadRsvpDoc(evtId, dateStr);
+  const isCoach = window.APP_ROLE === 'head-coach' || window.APP_ROLE === 'assistant-coach';
+  renderRsvpSection(container, evtId, dateStr, data, isCoach);
+}
+
+function renderRsvpSection(container, evtId, dateStr, data, isCoach) {
+  if (!container) return;
+  const uid       = firebase.auth().currentUser?.uid;
+  const responses = data.responses || {};
+  const myResp    = uid ? (responses[uid] || null) : null;
+  const myStatus  = myResp?.status || null;
+  const myReason  = myResp?.reason || '';
+
+  const counts = { attending: 0, unsure: 0, not_coming: 0 };
+  Object.values(responses).forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+  const total = counts.attending + counts.unsure + counts.not_coming;
+
+  // Build names list for coaches
+  let namesHtml = '';
+  if (isCoach && total > 0) {
+    const grouped = { attending: [], unsure: [], not_coming: [] };
+    Object.values(responses).forEach(r => { if (grouped[r.status]) grouped[r.status].push(r); });
+    namesHtml = `<div class="cal-rsvp-names">` +
+      (grouped.attending.length  ? `<div class="cal-rsvp-names-row"><span class="cal-rsvp-names-icon attending-icon">✓</span><span>${grouped.attending.map(r => escHtml(r.name)).join(', ')}</span></div>` : '') +
+      (grouped.unsure.length     ? grouped.unsure.map(r => `<div class="cal-rsvp-names-row"><span class="cal-rsvp-names-icon unsure-icon">?</span><span>${escHtml(r.name)}${r.reason ? ` — <em>${escHtml(r.reason)}</em>` : ''}</span></div>`).join('') : '') +
+      (grouped.not_coming.length ? grouped.not_coming.map(r => `<div class="cal-rsvp-names-row"><span class="cal-rsvp-names-icon not-coming-icon">✗</span><span>${escHtml(r.name)}${r.reason ? ` — <em>${escHtml(r.reason)}</em>` : ''}</span></div>`).join('') : '') +
+      `</div>`;
+  }
+
+  container.innerHTML = `
+    <div class="cal-rsvp-btns">
+      ${Object.entries(STATUS_META).map(([s, m]) =>
+        `<button class="cal-rsvp-btn${myStatus === s ? ' cal-rsvp-btn-' + m.cls : ''}" data-status="${s}">${m.label}</button>`
+      ).join('')}
+    </div>
+    ${myReason && myStatus && myStatus !== 'attending'
+      ? `<div class="cal-rsvp-myreason">Your reason: ${escHtml(myReason)}</div>` : ''}
+    <div class="cal-rsvp-reason-wrap" id="rrw-${evtId}-${dateStr}" style="display:none;">
+      <textarea class="cal-rsvp-reason-input" id="rri-${evtId}-${dateStr}" placeholder="Reason (required)…" maxlength="200" rows="2"></textarea>
+      <button class="btn-primary" style="padding:7px 14px;font-size:.82rem;flex-shrink:0;" id="rrs-${evtId}-${dateStr}">Save</button>
+    </div>
+    ${total > 0 ? `<div class="cal-rsvp-summary">${counts.attending} attending · ${counts.unsure} unsure · ${counts.not_coming} not coming</div>` : ''}
+    ${namesHtml}
+  `;
+
+  // Wire status buttons
+  let pendingStatus = null;
+  container.querySelectorAll('.cal-rsvp-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const status    = btn.dataset.status;
+      const reasonWrap = document.getElementById(`rrw-${evtId}-${dateStr}`);
+      if (status === 'attending') {
+        reasonWrap.style.display = 'none';
+        pendingStatus = null;
+        doSaveRsvp(evtId, dateStr, 'attending', null, container, isCoach);
+      } else {
+        pendingStatus = status;
+        reasonWrap.style.display = 'flex';
+        const inp = document.getElementById(`rri-${evtId}-${dateStr}`);
+        inp.value = (myStatus === status && myReason) ? myReason : '';
+        inp.focus();
+      }
+    });
+  });
+
+  const saveBtn = document.getElementById(`rrs-${evtId}-${dateStr}`);
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const inp    = document.getElementById(`rri-${evtId}-${dateStr}`);
+      const reason = inp ? inp.value.trim() : '';
+      if (!reason) {
+        if (inp) { inp.classList.add('tiq-input-error'); inp.addEventListener('input', () => inp.classList.remove('tiq-input-error'), { once: true }); }
+        showToast('Please enter a reason.', 'error');
+        return;
+      }
+      if (!pendingStatus) return;
+      doSaveRsvp(evtId, dateStr, pendingStatus, reason, container, isCoach);
+    });
+  }
+}
+
+async function doSaveRsvp(evtId, dateStr, status, reason, container, isCoach) {
+  const user = firebase.auth().currentUser;
+  if (!user) { showToast('Not signed in.', 'error'); return; }
+  const uid   = user.uid;
+  const name  = user.displayName || 'Team Member';
+  const key   = `${evtId}_${dateStr}`;
+  const docId = `${teamId}_${evtId}_${dateStr}`;
+  const entry = { status, reason: reason || null, name, updatedAt: Date.now() };
+  try {
+    await firebase.firestore().collection('rsvps').doc(docId).set(
+      { responses: { [uid]: entry } }, { merge: true }
+    );
+    if (!rsvpCache[key]) rsvpCache[key] = { responses: {} };
+    rsvpCache[key].responses[uid] = entry;
+    renderRsvpSection(container, evtId, dateStr, rsvpCache[key], isCoach);
+    showToast('Response saved.', 'success');
+  } catch {
+    showToast('Could not save response. Try again.', 'error');
+  }
+}
+
 // ── Calendar render ──
 function renderCalendar() {
   const events = getEvents();
@@ -137,7 +260,6 @@ function renderCalendar() {
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
 
-  // Day-of-week headers
   DAY_NAMES.forEach(d => {
     const h = document.createElement('div');
     h.className = 'cal-day-header';
@@ -145,7 +267,6 @@ function renderCalendar() {
     grid.appendChild(h);
   });
 
-  // Start offset: Monday = 0
   const firstDayOfWeek = (new Date(curYear, curMonth, 1).getDay() + 6) % 7;
   const daysInMonth    = new Date(curYear, curMonth + 1, 0).getDate();
   const daysInPrev     = new Date(curYear, curMonth, 0).getDate();
@@ -211,12 +332,9 @@ function renderCalendar() {
 
 function renderUpcoming(events) {
   const wrap = document.getElementById('calUpcoming');
-
-  // Build a flat list of upcoming occurrences (next 60 days)
   const seen = new Set();
   const upcoming = [];
 
-  // First pass: one-time events
   events.forEach(e => {
     if (e.date >= TODAY && (!e.recurrence || e.recurrence === 'none')) {
       const exceptions = e.exceptions || [];
@@ -227,29 +345,21 @@ function renderUpcoming(events) {
     }
   });
 
-  // Second pass: recurring occurrences in next 60 days
   events.forEach(e => {
     if (!e.recurrence || e.recurrence === 'none') return;
-    // Also include the master date itself if it's upcoming
     if (e.date >= TODAY && matchesDate(e, e.date) && !seen.has(e.id + '|' + e.date)) {
       upcoming.push({ date: e.date, evt: e });
       seen.add(e.id + '|' + e.date);
     }
-    const occs = futureOccurrences(e, TODAY, 60);
-    occs.forEach(ds => {
+    futureOccurrences(e, TODAY, 60).forEach(ds => {
       const key = e.id + '|' + ds;
-      if (!seen.has(key)) {
-        upcoming.push({ date: ds, evt: e });
-        seen.add(key);
-      }
+      if (!seen.has(key)) { upcoming.push({ date: ds, evt: e }); seen.add(key); }
     });
   });
 
-  upcoming.sort((a, b) => {
-    const at = a.date + (a.evt.time || '99:99');
-    const bt = b.date + (b.evt.time || '99:99');
-    return at.localeCompare(bt);
-  });
+  upcoming.sort((a, b) =>
+    (a.date + (a.evt.time||'99:99')).localeCompare(b.date + (b.evt.time||'99:99'))
+  );
 
   const show = upcoming.slice(0, 5);
   if (!show.length) { wrap.innerHTML = ''; return; }
@@ -292,25 +402,28 @@ function closeDayPanel() {
 }
 
 function renderDayEvents() {
-  const events    = getEventsForDate(getEvents(), selectedDate)
+  const events  = getEventsForDate(getEvents(), selectedDate)
     .sort((a, b) => (a.time||'99:99').localeCompare(b.time||'99:99'));
-  const list      = document.getElementById('dayEventsList');
-  const footer    = document.getElementById('dayPanelFooter');
+  const list    = document.getElementById('dayEventsList');
+  const footer  = document.getElementById('dayPanelFooter');
 
   if (!events.length) {
     list.innerHTML = '<p style="color:#64748b;font-size:0.88rem;padding:12px 0;">No events on this day.</p>';
   } else {
     list.innerHTML = events.map(ev => {
-      const meta = TYPE_META[ev.type] || TYPE_META.other;
+      const meta       = TYPE_META[ev.type] || TYPE_META.other;
       const isRecurring = ev.recurrence && ev.recurrence !== 'none';
       return `
         <div class="cal-event-item" data-id="${escHtml(ev.id)}">
           <span class="cal-event-bar" style="background:${meta.color};"></span>
           <div class="cal-event-info">
-            <div class="cal-event-title">${escHtml(ev.title)}${isRecurring ? ' <span style="font-size:.75rem;color:var(--text-muted);">↺ ' + escHtml(RECUR_LABELS[ev.recurrence] || '') + '</span>' : ''}</div>
+            <div class="cal-event-title">${escHtml(ev.title)}${isRecurring ? ` <span style="font-size:.75rem;color:var(--text-muted);">↺ ${escHtml(RECUR_LABELS[ev.recurrence]||'')}</span>` : ''}</div>
             <div class="cal-event-meta">
               ${ev.time ? ev.time + ' · ' : ''}${meta.label}
               ${ev.notes ? '<br><span style="color:#64748b;font-size:0.78rem;">' + escHtml(ev.notes) + '</span>' : ''}
+            </div>
+            <div class="cal-rsvp-section" id="rsvp-${escHtml(ev.id)}-${escHtml(selectedDate)}">
+              <div style="color:var(--text-muted);font-size:.78rem;padding:6px 0;">Loading…</div>
             </div>
           </div>
           ${canEdit ? `
@@ -344,6 +457,14 @@ function renderDayEvents() {
         });
       });
     }
+
+    // Load RSVPs asynchronously for each event
+    const dateSnap = selectedDate;
+    window.DB_READY.then(() => {
+      events.forEach(ev => {
+        if (selectedDate === dateSnap) loadAndRenderRsvp(ev.id, dateSnap);
+      });
+    });
   }
 
   footer.innerHTML = canEdit
@@ -399,8 +520,7 @@ function setSelectedType(type) {
 function setSelectedRecur(recur) {
   selectedRecur = recur;
   document.querySelectorAll('.cal-recur-btn').forEach(btn => {
-    const active = btn.dataset.recur === recur;
-    btn.classList.toggle('cal-recur-active', active);
+    btn.classList.toggle('cal-recur-active', btn.dataset.recur === recur);
   });
 }
 
@@ -430,7 +550,6 @@ function saveEvent() {
   document.getElementById('eventFormBackdrop').classList.remove('active');
   renderCalendar();
 
-  // Refresh or open the day panel for the saved event's date
   if (selectedDate === evt.date) renderDayEvents();
   else { selectedDate = evt.date; renderDayEvents(); }
 
@@ -501,7 +620,6 @@ function init() {
     });
   });
 
-  // Check role after auth
   window.DB_READY.then(() => {
     canEdit = window.APP_ROLE === 'head-coach' || window.APP_ROLE === 'assistant-coach';
   });
