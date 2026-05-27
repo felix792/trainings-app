@@ -67,6 +67,21 @@
           </div>
         </div>
       </section>
+
+      <section class="stat-section" id="timelineSection" style="display:none;">
+        <div class="tactic-header" style="margin-bottom:12px;">
+          <h2 class="section-title" style="margin-bottom:0;">Match Timeline</h2>
+          <button class="btn-secondary btn-sm" id="tlToggleBtn" style="font-size:0.8rem;padding:4px 10px;">Hide Stats</button>
+        </div>
+        <div class="tl-filters" id="tlFilters">
+          <button class="tl-filter-btn tl-filter-active" data-type="goal">⚽ Goals</button>
+          <button class="tl-filter-btn tl-filter-active" data-type="assist">👟 Assists</button>
+          <button class="tl-filter-btn tl-filter-active" data-type="yellow_card">🟨 Yellow</button>
+          <button class="tl-filter-btn tl-filter-active" data-type="red_card">🟥 Red</button>
+          <button class="tl-filter-btn tl-filter-active" data-type="sub">↕ Subs</button>
+        </div>
+        <div class="tl-track" id="tlTrack"></div>
+      </section>
     </div>
   </main>
 
