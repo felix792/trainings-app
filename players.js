@@ -226,10 +226,12 @@ function initModal() {
     const deleteBtn = e.target.closest('[data-delete-id]');
     if (deleteBtn) {
       e.stopPropagation();
-      const t = getTeam();
-      t.players = t.players.filter((p) => p.id !== deleteBtn.dataset.deleteId);
-      updateTeam(t);
-      renderPlayers();
+      showConfirm('Remove this player from the team?', () => {
+        const t = getTeam();
+        t.players = t.players.filter((p) => p.id !== deleteBtn.dataset.deleteId);
+        updateTeam(t);
+        renderPlayers();
+      });
       return;
     }
     const row = e.target.closest('[data-player-id]');
