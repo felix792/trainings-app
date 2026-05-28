@@ -247,4 +247,14 @@ window.DB_READY.then(() => {
   if (window.APP_ROLE !== 'player') return;
   document.body.classList.add('role-player');
   document.querySelectorAll('.stat-input').forEach(inp => { inp.disabled = true; });
+  // Hide every stat row that doesn't belong to the current player
+  const uid = firebase.auth().currentUser?.uid;
+  const t   = loadTeams().find(x => x.id === teamId);
+  const me  = uid && (t?.players || []).find(p => p.uid === uid);
+  if (me) {
+    document.querySelectorAll('.stat-player-row').forEach(row => {
+      const inp = row.querySelector('[data-player-id]');
+      if (inp && inp.dataset.playerId !== me.id) row.style.display = 'none';
+    });
+  }
 });
