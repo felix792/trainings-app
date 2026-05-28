@@ -371,7 +371,7 @@ function renderAttrChart(panel, attr) {
     const delBtn = document.createElement('button');
     delBtn.className = 'attr-chart-del-btn';
     delBtn.textContent = 'x';
-    delBtn.addEventListener('click', () => deleteAttrEntry(attr, entry.date));
+    delBtn.addEventListener('click', () => showConfirm('Delete this history entry?', () => deleteAttrEntry(attr, entry.date)));
     row.appendChild(delBtn);
     list.appendChild(row);
   });
