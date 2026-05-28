@@ -106,7 +106,9 @@ document.getElementById('teamsGrid').addEventListener('click', (e) => {
   const deleteBtn = e.target.closest('[data-delete]');
   if (deleteBtn) {
     e.stopPropagation();
-    deleteTeam(deleteBtn.dataset.delete);
+    showConfirm('Delete this team? This cannot be undone.', () => {
+      deleteTeam(deleteBtn.dataset.delete);
+    });
     return;
   }
   const card = e.target.closest('.team-card');
