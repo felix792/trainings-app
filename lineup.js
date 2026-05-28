@@ -512,3 +512,7 @@ function assignPlayer(slotKey, playerId) {
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+window.DB_READY.then(() => {
+  if (window.APP_ROLE === 'player') document.body.classList.add('role-player');
+});
