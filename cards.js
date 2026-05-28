@@ -154,6 +154,6 @@ window.DB_READY.then(() => {
   const me  = uid && (team?.players || []).find(p => p.uid === uid);
   if (!me) return;
   document.querySelectorAll('.player-card-item').forEach(el => {
-    if (el.dataset.playerId !== me.id) el.style.display = 'none';
+    if (el.dataset.playerId !== me.id) el.remove();
   });
 });
