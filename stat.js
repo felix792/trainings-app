@@ -254,7 +254,7 @@ window.DB_READY.then(() => {
   if (me) {
     document.querySelectorAll('.stat-player-row').forEach(row => {
       const inp = row.querySelector('[data-player-id]');
-      if (inp && inp.dataset.playerId !== me.id) row.style.display = 'none';
+      if (inp && inp.dataset.playerId !== me.id) row.remove();
     });
   }
 });
