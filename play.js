@@ -524,3 +524,12 @@ function initNotes() {
     }, 600);
   });
 }
+
+window.DB_READY.then(() => {
+  if (window.APP_ROLE !== 'player') return;
+  document.body.classList.add('role-player');
+  const canvas = document.getElementById('tacticCanvas');
+  if (canvas) canvas.style.pointerEvents = 'none';
+  const textarea = document.getElementById('playNotes');
+  if (textarea) textarea.readOnly = true;
+});
