@@ -223,6 +223,7 @@ function renderStatRows(players) {
 
   // Single delegated listener — entries created lazily on first edit
   container.addEventListener('input', (e) => {
+    if (window.APP_ROLE === 'player') return;
     const input = e.target.closest('.stat-input');
     if (!input) return;
 
@@ -241,3 +242,9 @@ function renderStatRows(players) {
     scheduleSave();
   });
 }
+
+window.DB_READY.then(() => {
+  if (window.APP_ROLE !== 'player') return;
+  document.body.classList.add('role-player');
+  document.querySelectorAll('.stat-input').forEach(inp => { inp.disabled = true; });
+});
