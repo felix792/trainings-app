@@ -49,6 +49,52 @@ if (!team) {
   renderPlayers();
   initModal();
   initSortBar();
+
+  window.DB_READY.then(() => {
+    if (window.APP_ROLE === 'player') {
+      document.body.classList.add('role-player');
+      const uid = firebase.auth().currentUser?.uid;
+      const t   = getTeam();
+      const me  = uid && (t?.players || []).find(p => p.uid === uid);
+      if (me) {
+        window.location.replace('player.html?teamId=' + teamId + '&playerId=' + me.id);
+      } else {
+        document.getElementById('pageContent').innerHTML =
+          '<div style="padding:48px 20px;text-align:center;color:#94a3b8;line-height:1.8;">' +
+          '<p style="font-size:1rem;font-weight:600;color:#f1f5f9;">Profile not linked yet</p>' +
+          '<p style="font-size:.875rem;">Ask your coach to share an invite link with you, then open it and sign in.</p>' +
+          '</div>';
+      }
+    } else {
+      syncPlayerProfiles();
+    }
+  });
+}
+
+function syncPlayerProfiles() {
+  if (!window.getInvites || !window.APP_OWNER_UID) return;
+  window.getInvites(window.APP_OWNER_UID).then((invites) => {
+    const playerInvites = invites.filter(i => i.used && i.role === 'player' && i.playerProfile);
+    if (!playerInvites.length) return;
+    const t = getTeam();
+    if (!t) return;
+    if (!t.players) t.players = [];
+    let changed = false;
+    playerInvites.forEach(inv => {
+      const p     = inv.playerProfile;
+      const byUid = t.players.find(x => x.uid === p.uid);
+      const byId  = t.players.find(x => x.id  === p.playerId);
+      if (!byUid && !byId) {
+        t.players.push({ id: p.playerId, name: p.name, uid: p.uid });
+        changed = true;
+      } else if (byId && !byId.uid) {
+        byId.uid  = p.uid;
+        byId.name = byId.name || p.name;
+        changed = true;
+      }
+    });
+    if (changed) { updateTeam(t); renderPlayers(); }
+  }).catch(() => {});
 }
 
 // ── Sort ──
@@ -208,7 +254,9 @@ function initModal() {
     closeModal();
   }
 
-  document.getElementById('openAddPlayer').addEventListener('click', openModal);
+  // Add player button removed — players self-register via invite link
+  const openAddPlayerBtn = document.getElementById('openAddPlayer');
+  if (openAddPlayerBtn) openAddPlayerBtn.addEventListener('click', openModal);
   document.getElementById('closePlayerModal').addEventListener('click', closeModal);
   document.getElementById('cancelPlayerModal').addEventListener('click', closeModal);
   document.getElementById('addPlayerBtn').addEventListener('click', submit);
