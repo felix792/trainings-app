@@ -141,15 +141,40 @@ function renderActiveInvites(active) {
     el.innerHTML = '<span class="sp-empty">No active invite codes.</span>';
     return;
   }
-  el.innerHTML = `<div class="sp-invite-list">${active.map((inv) => `
-    <div class="sp-invite-row">
+  const BASE = 'https://felix792.github.io/trainings-app/';
+  el.innerHTML = `<div class="sp-invite-list">${active.map((inv) => {
+    const isPlayer = inv.role === 'player';
+    const link = BASE + '?invite=' + inv.id;
+    const roleLabel = inv.role === 'assistant-coach' ? (window.APP_COACH_SYSTEM === 'simple' ? 'Coach' : 'Asst. Coach') : 'Player';
+    return `
+    <div class="sp-invite-row" style="flex-direction:column;align-items:stretch;gap:8px;">
       <div class="sp-invite-row-left">
         <span class="sp-invite-code">${escapeHtml(inv.id)}</span>
         ${inv.label ? `<span class="sp-tag sp-tag-muted">${escapeHtml(inv.label)}</span>` : ''}
-        <span class="sp-tag">${inv.role === 'assistant-coach' ? (window.APP_COACH_SYSTEM === 'simple' ? 'Coach' : 'Asst. Coach') : 'Player'}</span>
+        <span class="sp-tag">${escapeHtml(roleLabel)}</span>
       </div>
-      <button class="sp-revoke-btn" data-code="${escapeHtml(inv.id)}">Revoke</button>
-    </div>`).join('')}</div>`;
+      ${isPlayer ? `<div style="background:#0e0e1a;border:1px solid #1e293b;border-radius:7px;padding:8px 10px;font-size:.75rem;color:#94a3b8;word-break:break-all;font-family:monospace;">${escapeHtml(link)}</div>` : ''}
+      <div style="display:flex;gap:6px;justify-content:flex-end;">
+        ${isPlayer ? `<button class="sp-copy-link-btn btn-secondary" style="font-size:.8rem;padding:5px 12px;" data-link="${escapeHtml(link)}">Copy Link</button>` : ''}
+        <button class="sp-revoke-btn" data-code="${escapeHtml(inv.id)}">Revoke</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+  el.querySelectorAll('.sp-copy-link-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(btn.dataset.link)
+        .catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = btn.dataset.link;
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); ta.remove();
+        })
+        .finally(() => {
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000);
+        });
+    });
+  });
   el.querySelectorAll('.sp-revoke-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       showConfirm('Revoke this invite code?', async () => {
