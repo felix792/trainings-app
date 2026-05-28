@@ -370,12 +370,11 @@ function renderUpcoming(events) {
       const dateParts = date.split('-').map(Number);
       const dLabel = new Date(dateParts[0], dateParts[1]-1, dateParts[2])
         .toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
-      const recurIcon = (e.recurrence && e.recurrence !== 'none') ? ' ↺' : '';
       return `
         <div class="cal-upcoming-item" data-date="${escHtml(date)}">
           <span class="cal-upcoming-bar" style="background:${meta.color};"></span>
           <div class="cal-upcoming-info">
-            <span class="cal-upcoming-name">${escHtml(e.title)}${recurIcon}</span>
+            <span class="cal-upcoming-name">${escHtml(e.title)}</span>
             <span class="cal-upcoming-meta">${dLabel}${e.time ? ' · ' + e.time : ''} · ${meta.label}</span>
           </div>
         </div>`;
@@ -411,13 +410,12 @@ function renderDayEvents() {
     list.innerHTML = '<p style="color:#64748b;font-size:0.88rem;padding:12px 0;">No events on this day.</p>';
   } else {
     list.innerHTML = events.map(ev => {
-      const meta       = TYPE_META[ev.type] || TYPE_META.other;
-      const isRecurring = ev.recurrence && ev.recurrence !== 'none';
+      const meta = TYPE_META[ev.type] || TYPE_META.other;
       return `
         <div class="cal-event-item" data-id="${escHtml(ev.id)}">
           <span class="cal-event-bar" style="background:${meta.color};"></span>
           <div class="cal-event-info">
-            <div class="cal-event-title">${escHtml(ev.title)}${isRecurring ? ` <span style="font-size:.75rem;color:var(--text-muted);">↺ ${escHtml(RECUR_LABELS[ev.recurrence]||'')}</span>` : ''}</div>
+            <div class="cal-event-title">${escHtml(ev.title)}</div>
             <div class="cal-event-meta">
               ${ev.time ? ev.time + ' · ' : ''}${meta.label}
               ${ev.notes ? '<br><span style="color:#64748b;font-size:0.78rem;">' + escHtml(ev.notes) + '</span>' : ''}
