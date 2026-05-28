@@ -2923,6 +2923,30 @@ canvas {
   max-height: 70vh;
 }
 
+/* ── Player read-only view ───────────────────────────────────────────────── */
+/* Elements that must be hidden entirely for players */
+.role-player .attr-chart-add-btn,
+.role-player .attr-chart-del-btn,
+.role-player #playerNotesSection,
+.role-player #tacticToolbar,
+.role-player #clearBoard,
+.role-player #formationBar,
+.role-player #customFormInput,
+.role-player #applyCustomForm,
+.role-player #autoGenBtn,
+.role-player .points-btn,
+.role-player #openSetupBtn,
+.role-player #openSetupEmpty,
+.role-player #resetBtn { display: none !important; }
+
+/* Elements that stay visible but are non-interactive for players */
+.role-player .rating-btn,
+.role-player .foot-btn,
+.role-player .pos-btn { pointer-events: none !important; cursor: default !important; }
+.role-player #tacticCanvas { pointer-events: none !important; cursor: default !important; }
+.role-player .lu-slot     { pointer-events: none !important; cursor: default !important; }
+.role-player .stat-input  { pointer-events: none !important; cursor: default !important; }
+
 /* ── Match Timeline ───────────────────────────────────────────────────────── */
 .tl-filters {
   display: flex;
