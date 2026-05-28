@@ -532,13 +532,28 @@ function saveEvent() {
     return;
   }
 
+  const rawTime = document.getElementById('evtTime').value.trim();
+  if (rawTime && !/^\d{1,2}:\d{2}$/.test(rawTime)) {
+    document.getElementById('evtTime').classList.add('tiq-input-error');
+    document.getElementById('evtTime').addEventListener('input', () =>
+      document.getElementById('evtTime').classList.remove('tiq-input-error'), { once: true });
+    showToast('Time must be in HH:MM format (e.g. 18:00).', 'error');
+    return;
+  }
+
+  const rawDate = document.getElementById('evtDate').value;
+  if (!rawDate || !/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+    showToast('Please select a valid date.', 'error');
+    return;
+  }
+
   const existing = editingId ? getEvents().find(e => e.id === editingId) : null;
   const evt = {
     id:         editingId || crypto.randomUUID(),
-    date:       document.getElementById('evtDate').value || selectedDate || TODAY,
+    date:       rawDate,
     title,
     type:       selectedType,
-    time:       document.getElementById('evtTime').value  || null,
+    time:       rawTime || null,
     notes:      document.getElementById('evtNotes').value.trim() || null,
     recurrence: selectedRecur === 'none' ? null : selectedRecur,
     exceptions: (existing && existing.exceptions) ? existing.exceptions : [],
