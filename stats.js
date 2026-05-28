@@ -122,10 +122,12 @@ function initModal() {
     const deleteBtn = e.target.closest('[data-delete-id]');
     if (deleteBtn) {
       e.stopPropagation();
-      const t = getTeam();
-      t.games = (t.games || []).filter((g) => g.id !== deleteBtn.dataset.deleteId);
-      updateTeam(t);
-      renderGames();
+      showConfirm('Delete this game and all its stats?', () => {
+        const t = getTeam();
+        t.games = (t.games || []).filter((g) => g.id !== deleteBtn.dataset.deleteId);
+        updateTeam(t);
+        renderGames();
+      });
       return;
     }
     const row = e.target.closest('[data-game-id]');
