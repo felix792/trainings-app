@@ -244,3 +244,7 @@ function commitSetup() {
   closeSetup();
   renderBoard();
 }
+
+window.DB_READY.then(() => {
+  if (window.APP_ROLE === 'player') document.body.classList.add('role-player');
+});
