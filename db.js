@@ -3,6 +3,12 @@
   const isHome = /\/(index\.html)?$/.test(window.location.pathname) ||
                  window.location.pathname.endsWith('/trainings-app/');
 
+  // Detect ?invite=CODE in URL and persist it across the Google sign-in popup
+  (() => {
+    const inv = new URLSearchParams(window.location.search).get('invite');
+    if (inv) sessionStorage.setItem('pendingInvite', inv.toUpperCase().trim());
+  })();
+
   let syncTimer  = null;
   let cloudReady = false;
   let resolveReady;
@@ -231,6 +237,12 @@
       const coachData = coachSnap.data();
       if (coachData.teams) origSet(STORAGE_KEY, coachData.teams);
 
+      // New player invite — show profile creation step before completing join
+      if (invite.role === 'player' && !invite.used) {
+        showProfileSetup(user, invite, code);
+        return;
+      }
+
       if (!invite.used) {
         await inviteDoc(code).update({
           used: true, usedBy: user.uid,
@@ -251,9 +263,81 @@
       const newMems = alreadyMember ? existingMems : [...existingMems, membership];
       if (!alreadyMember) await saveProfile(user.uid, { memberships: newMems });
       await activateMembership(user, alreadyMember ? existingMems.find(m => m.ownerUid === invite.ownerUid && m.teamId === invite.teamId) : membership, newMems);
+      sessionStorage.removeItem('pendingInvite');
     } catch {
       showJoinTeam(user, 'Connection error. Please try again.');
     }
+  }
+
+  // ── Player profile setup (shown when a new player accepts an invite) ────────
+  function showProfileSetup(user, invite, code) {
+    const defaultName = user.displayName || '';
+    showOverlay(`
+      <div style="text-align:center;max-width:340px;width:100%;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">👋</div>
+        <div style="color:#f1f5f9;font-size:1.1rem;font-weight:700;margin-bottom:6px;">Welcome to ${escHtml(invite.teamName)}!</div>
+        <div style="color:#94a3b8;font-size:.85rem;margin-bottom:24px;line-height:1.5;">Enter your name to create your player profile.</div>
+        <input id="pf-name" value="${escHtml(defaultName)}" placeholder="Your name" maxlength="50"
+          style="width:100%;background:#0e0e1a;border:1px solid #334155;color:#f1f5f9;border-radius:8px;padding:12px 14px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:8px;"/>
+        <div style="color:#ef4444;font-size:.8rem;min-height:20px;margin-bottom:12px;" id="pf-error"></div>
+        <button id="pf-join-btn" style="width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px;font-size:1rem;font-weight:600;cursor:pointer;">Join Team</button>
+      </div>`);
+
+    const inp = document.getElementById('pf-name');
+    inp.focus(); inp.select();
+
+    const doJoin = async () => {
+      const name = inp.value.trim();
+      if (!name) { document.getElementById('pf-error').textContent = 'Please enter your name.'; return; }
+      showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Joining team…</div>');
+      try {
+        const playerId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+        await inviteDoc(code).update({
+          used: true, usedBy: user.uid, usedByName: name, usedAt: Date.now(),
+          playerProfile: { playerId, name, uid: user.uid, createdAt: Date.now() }
+        });
+
+        const membership = {
+          teamId: invite.teamId, teamName: invite.teamName,
+          role: 'player', ownerUid: invite.ownerUid, joinedAt: Date.now()
+        };
+        const existing    = await getProfile(user.uid);
+        const existingMems = (existing && existing.memberships) || [];
+        const alreadyMember = existingMems.some(
+          (m) => m.ownerUid === invite.ownerUid && m.teamId === invite.teamId
+        );
+        const newMems = alreadyMember ? existingMems : [...existingMems, membership];
+        if (!alreadyMember) await saveProfile(user.uid, { memberships: newMems });
+
+        await activateMembership(
+          user,
+          alreadyMember ? existingMems.find(m => m.ownerUid === invite.ownerUid && m.teamId === invite.teamId) : membership,
+          newMems
+        );
+
+        // Add own player entry to localStorage so players.html can redirect immediately
+        try {
+          const teams = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          const t = teams.find(x => x.id === invite.teamId);
+          if (t && !(t.players || []).find(p => p.id === playerId)) {
+            if (!t.players) t.players = [];
+            t.players.push({ id: playerId, name, uid: user.uid });
+            origSet(STORAGE_KEY, JSON.stringify(teams));
+          }
+        } catch (_) {}
+
+        sessionStorage.removeItem('pendingInvite');
+      } catch {
+        showToast('Connection error. Please try again.', 'error');
+        showProfileSetup(user, invite, code);
+      }
+    };
+
+    document.getElementById('pf-join-btn').addEventListener('click', doJoin);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') doJoin(); });
   }
 
   // ── Membership selector ──────────────────────────────────────────────────────
@@ -372,6 +456,14 @@
     }
 
     const memberships = profile && profile.memberships;
+
+    // Auto-process invite from URL or invite link (?invite=CODE)
+    const pendingCode = sessionStorage.getItem('pendingInvite');
+    if (pendingCode) {
+      attemptJoin(user, pendingCode);
+      return;
+    }
+
     if (!memberships || memberships.length === 0) {
       showWelcomeScreen(user);
       return;
