@@ -603,10 +603,12 @@ function init() {
   });
   document.getElementById('recurDelThisBtn').addEventListener('click', () => {
     if (!_recurDelEvt || !_recurDelDate) return;
-    addException(_recurDelEvt.id, _recurDelDate);
-    closeRecurDeleteModal();
-    renderCalendar();
-    renderDayEvents();
+    showConfirm('Remove this occurrence only?', () => {
+      addException(_recurDelEvt.id, _recurDelDate);
+      closeRecurDeleteModal();
+      renderCalendar();
+      renderDayEvents();
+    });
   });
   document.getElementById('recurDelAllBtn').addEventListener('click', () => {
     if (!_recurDelEvt) return;
