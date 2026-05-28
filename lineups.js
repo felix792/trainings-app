@@ -81,8 +81,11 @@ function initModal() {
     const del = e.target.closest('[data-delete-id]');
     if (del) {
       e.stopPropagation();
-      const t = getTeam(); t.lineups = (t.lineups || []).filter(l => l.id !== del.dataset.deleteId);
-      updateTeam(t); renderLineups(); return;
+      showConfirm('Delete this lineup?', () => {
+        const t = getTeam(); t.lineups = (t.lineups || []).filter(l => l.id !== del.dataset.deleteId);
+        updateTeam(t); renderLineups();
+      });
+      return;
     }
     const row = e.target.closest('[data-lu-id]');
     if (row) window.location.href = 'lineup.html?teamId=' + teamId + '&lineupId=' + row.dataset.luId;
