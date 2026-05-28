@@ -221,6 +221,7 @@
   }
 
   async function attemptJoin(user, code) {
+    code = (code || '').trim().toUpperCase();
     if (!code) { showJoinTeam(user, 'Please enter an invite code.'); return; }
     showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Validating code…</div>');
     try {
@@ -287,8 +288,9 @@
     inp.focus(); inp.select();
 
     const doJoin = async () => {
-      const name = inp.value.trim();
+      const name = inp.value.trim().slice(0, 50);
       if (!name) { document.getElementById('pf-error').textContent = 'Please enter your name.'; return; }
+      if (name.length < 2) { document.getElementById('pf-error').textContent = 'Name must be at least 2 characters.'; return; }
       showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Joining team…</div>');
       try {
         const playerId = (typeof crypto !== 'undefined' && crypto.randomUUID)
