@@ -117,10 +117,12 @@ function initModal() {
     const deleteBtn = e.target.closest('[data-delete-id]');
     if (deleteBtn) {
       e.stopPropagation();
-      const t = getTeam();
-      t.exercises = t.exercises.filter((ex) => ex.id !== deleteBtn.dataset.deleteId);
-      updateTeam(t);
-      renderExercises();
+      showConfirm('Delete this exercise?', () => {
+        const t = getTeam();
+        t.exercises = t.exercises.filter((ex) => ex.id !== deleteBtn.dataset.deleteId);
+        updateTeam(t);
+        renderExercises();
+      });
       return;
     }
     const row = e.target.closest('[data-exercise-id]');
