@@ -201,7 +201,10 @@ if (!player) {
   buildStats();
 
   window.DB_READY.then(() => {
-    if (window.APP_ROLE === 'player') applyPlayerSections(window.APP_PERMISSIONS);
+    if (window.APP_ROLE === 'player') {
+      applyPlayerSections(window.APP_PERMISSIONS);
+      document.body.classList.add('role-player');
+    }
   });
 
   document.getElementById('modalCancel').addEventListener('click', closeAttrModal);
