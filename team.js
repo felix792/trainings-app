@@ -112,7 +112,6 @@ const PERM_MAP = {
   stats:     'goToStats',
   points:    'goToPoints',
   cards:     'goToCards',
-  blackbox:  'goToBlackbox',
   livegame:  'goToLiveGame',
   calendar:  'goToCalendar',
 };
