@@ -141,7 +141,7 @@ function renderActiveInvites(active) {
     el.innerHTML = '<span class="sp-empty">No active invite codes.</span>';
     return;
   }
-  const BASE = 'https://felix792.github.io/trainings-app/';
+  const BASE = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/').replace(/\/$/, '') + '/';
   el.innerHTML = `<div class="sp-invite-list">${active.map((inv) => {
     const isPlayer = inv.role === 'player';
     const link = BASE + '?invite=' + inv.id;
