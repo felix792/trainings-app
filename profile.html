@@ -61,17 +61,30 @@
         <div class="prof-section-title">Appearance</div>
         <div class="prof-theme-grid" id="themePresets"></div>
         <div class="prof-theme-custom" id="themeCustomWrap" style="display:none;">
-          <div class="prof-theme-custom-row">
-            <label class="prof-theme-color-label">
-              Primary colour
-              <input type="color" id="customPrimary" value="#1d4ed8" />
-            </label>
-            <label class="prof-theme-color-label">
-              Background colour
-              <input type="color" id="customSecondary" value="#000000" />
-            </label>
+          <div class="prof-color-picker">
+
+            <div class="prof-color-row">
+              <span class="prof-color-label-txt">Primary colour</span>
+              <div class="prof-color-well">
+                <div class="prof-color-swatch" id="swatchPrimary" style="background:#1d4ed8;">
+                  <input type="color" id="customPrimary" value="#1d4ed8" tabindex="-1" aria-label="Primary colour" />
+                </div>
+                <input type="text" class="prof-color-hex" id="hexPrimary" value="#1d4ed8" maxlength="7" spellcheck="false" autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="prof-color-row">
+              <span class="prof-color-label-txt">Background colour</span>
+              <div class="prof-color-well">
+                <div class="prof-color-swatch" id="swatchSecondary" style="background:#000000;">
+                  <input type="color" id="customSecondary" value="#000000" tabindex="-1" aria-label="Background colour" />
+                </div>
+                <input type="text" class="prof-color-hex" id="hexSecondary" value="#000000" maxlength="7" spellcheck="false" autocomplete="off" />
+              </div>
+            </div>
+
           </div>
-          <button class="btn-primary" id="applyCustomTheme" style="width:100%;">Apply</button>
+          <button class="btn-primary" id="applyCustomTheme" style="width:100%;margin-top:4px;">Save theme</button>
         </div>
       </div>
 
