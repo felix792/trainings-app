@@ -134,8 +134,14 @@ function escHtmlProf(s) {
 
   // Pre-fill custom pickers with whatever was last saved
   if (saved.id === 'custom') {
-    document.getElementById('customPrimary').value   = saved.primary   || '#1d4ed8';
-    document.getElementById('customSecondary').value = saved.secondary || '#7c3aed';
+    const p = saved.primary   || '#1d4ed8';
+    const s = saved.secondary || '#000000';
+    document.getElementById('customPrimary').value            = p;
+    document.getElementById('hexPrimary').value               = p.toUpperCase();
+    document.getElementById('swatchPrimary').style.background = p;
+    document.getElementById('customSecondary').value            = s;
+    document.getElementById('hexSecondary').value               = s.toUpperCase();
+    document.getElementById('swatchSecondary').style.background = s;
     document.getElementById('themeCustomWrap').style.display = '';
   }
 
@@ -171,16 +177,51 @@ function escHtmlProf(s) {
     window.TIQ_THEME_SAVE(primary, dark, light, secondary, 'custom');
   });
 
-  // Live-preview primary while the colour picker is open (mouseup fires after pick)
-  document.getElementById('customPrimary').addEventListener('input', (e) => {
-    const r = document.documentElement.style;
-    r.setProperty('--green', e.target.value);
+  // Wire a colour picker: keeps native <input type="color">, hex text, swatch, and
+  // live CSS preview all in sync whenever any of them changes.
+  function wireColor(colorId, hexId, swatchId, applyFn) {
+    const colorInp = document.getElementById(colorId);
+    const hexInp   = document.getElementById(hexId);
+    const swatch   = document.getElementById(swatchId);
+
+    function syncAll(val) {
+      colorInp.value            = val;
+      hexInp.value              = val.toUpperCase();
+      swatch.style.background   = val;
+      applyFn(val);
+    }
+
+    // Native colour picker dragged/changed
+    colorInp.addEventListener('input', (e) => syncAll(e.target.value));
+
+    // Hex text typed — apply as soon as it's a valid 6-digit hex
+    hexInp.addEventListener('input', (e) => {
+      let v = e.target.value.trim();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) syncAll(v);
+    });
+
+    // If the user leaves with an invalid value, snap back to last good colour
+    hexInp.addEventListener('blur', () => {
+      let v = hexInp.value.trim();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (!/^#[0-9a-fA-F]{6}$/.test(v)) hexInp.value = colorInp.value.toUpperCase();
+      else hexInp.value = hexInp.value.toUpperCase();
+    });
+  }
+
+  wireColor('customPrimary', 'hexPrimary', 'swatchPrimary', (val) => {
+    const dark  = darkenHex(val, 0.80);
+    const light = darkenHex(val, 0.12);
+    document.documentElement.style.setProperty('--green',       val);
+    document.documentElement.style.setProperty('--green-dark',  dark);
+    document.documentElement.style.setProperty('--green-light', light);
   });
-  document.getElementById('customSecondary').addEventListener('input', (e) => {
-    const bg = e.target.value;
-    const r  = document.documentElement.style;
-    r.setProperty('--bg',      bg);
-    r.setProperty('--surface', _tiqLighten(bg, 14));
-    r.setProperty('--border',  _tiqLighten(bg, 28));
+
+  wireColor('customSecondary', 'hexSecondary', 'swatchSecondary', (val) => {
+    const r = document.documentElement.style;
+    r.setProperty('--bg',      val);
+    r.setProperty('--surface', _tiqLighten(val, 14));
+    r.setProperty('--border',  _tiqLighten(val, 28));
   });
 })();
