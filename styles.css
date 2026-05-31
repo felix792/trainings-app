@@ -4,6 +4,7 @@
   --green: #1d4ed8;
   --green-dark: #1e40af;
   --green-light: #0c1a3a;
+  --accent: #7c3aed;
   --text: #e2e4f0;
   --text-muted: #6868a0;
   --border: #1c1c2c;
@@ -89,7 +90,7 @@ header {
   transition: border-color 0.15s, color 0.15s;
 }
 
-.btn-secondary:hover { border-color: #48486a; color: var(--text); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--text); }
 
 /* ── Main ── */
 main {
@@ -2300,6 +2301,99 @@ canvas {
 .prof-action-btn:hover { border-color: #475569; color: var(--text); }
 .prof-action-danger:hover { border-color: #ef4444; color: #ef4444; }
 
+/* ── Theme picker ── */
+.prof-section {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  margin-top: 4px;
+}
+.prof-section-title {
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+.prof-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+@media (max-width: 480px) { .prof-theme-grid { grid-template-columns: repeat(3, 1fr); } }
+.prof-theme-preset {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 6px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.prof-theme-preset:hover { border-color: #475569; }
+.prof-theme-preset-active { border-color: var(--green) !important; }
+.prof-theme-swatches {
+  display: flex;
+  gap: 3px;
+}
+.prof-theme-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.prof-theme-swatch-custom {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+.prof-theme-name {
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.prof-theme-custom {
+  margin-top: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prof-theme-custom-row {
+  display: flex;
+  gap: 12px;
+}
+.prof-theme-color-label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: .82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.prof-theme-color-label input[type="color"] {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  cursor: pointer;
+  padding: 3px;
+}
+
 /* ── Coach system selector ── */
 .sp-system-cards {
   display: flex;
@@ -2837,7 +2931,7 @@ canvas {
   transition: all 0.12s;
 }
 .cal-rsvp-btn:hover { border-color: #64748b; color: var(--text); }
-.cal-rsvp-btn-attending  { background: #16a34a; border-color: #16a34a; color: #fff !important; }
+.cal-rsvp-btn-attending  { background: var(--green); border-color: var(--green); color: #fff !important; }
 .cal-rsvp-btn-unsure     { background: #eab308; border-color: #eab308; color: #fff !important; }
 .cal-rsvp-btn-not-coming { background: #ef4444; border-color: #ef4444; color: #fff !important; }
 .cal-rsvp-reason-wrap {
