@@ -82,3 +82,101 @@ window.DB_READY.then(async () => {
   document.getElementById('signOutConfirm').addEventListener('click', () => firebase.auth().signOut());
   signOutModal.addEventListener('click', e => { if (e.target === signOutModal) signOutModal.classList.remove('active'); });
 });
+
+// ── Theme picker ─────────────────────────────────────────────────────────────
+// Runs immediately (no auth needed) — just reads localStorage and renders UI.
+
+const THEMES = [
+  { id: 'blue',   name: 'Night Blue',  primary: '#1d4ed8', dark: '#1e40af', light: '#0c1a3a', secondary: '#7c3aed' },
+  { id: 'green',  name: 'Forest',      primary: '#16a34a', dark: '#15803d', light: '#052e16', secondary: '#0ea5e9' },
+  { id: 'orange', name: 'Sunset',      primary: '#ea580c', dark: '#c2410c', light: '#431407', secondary: '#f59e0b' },
+  { id: 'purple', name: 'Storm',       primary: '#7c3aed', dark: '#6d28d9', light: '#2e1065', secondary: '#ec4899' },
+];
+
+// Compute a darker shade of a hex colour for the hover state.
+function darkenHex(hex, factor) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  const d = (v) => Math.max(0, Math.round(v * factor)).toString(16).padStart(2,'0');
+  return '#' + d(r) + d(g) + d(b);
+}
+
+function escHtmlProf(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+(function initThemePicker() {
+  const grid = document.getElementById('themePresets');
+  if (!grid) return;
+
+  const saved = window.TIQ_THEME_GET?.() || {};
+
+  // Build preset buttons + the Custom button
+  grid.innerHTML = THEMES.map(t => `
+    <button class="prof-theme-preset${saved.id === t.id ? ' prof-theme-preset-active' : ''}" data-tid="${t.id}">
+      <div class="prof-theme-swatches">
+        <span class="prof-theme-swatch" style="background:${t.primary};"></span>
+        <span class="prof-theme-swatch" style="background:${t.secondary};"></span>
+      </div>
+      <span class="prof-theme-name">${escHtmlProf(t.name)}</span>
+    </button>
+  `).join('') + `
+    <button class="prof-theme-preset${saved.id === 'custom' ? ' prof-theme-preset-active' : ''}" data-tid="custom">
+      <div class="prof-theme-swatches">
+        <span class="prof-theme-swatch-custom">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="13" r="2.5"/><circle cx="5" cy="13" r="2.5"/><circle cx="10.5" cy="19.5" r="2.5"/><line x1="11.1" y1="8.6" x2="7" y2="11.4"/><line x1="15.9" y1="8.6" x2="17.4" y2="10.5"/><line x1="7" y1="15" x2="9" y2="17.5"/><line x1="16.5" y1="15" x2="12" y2="17.5"/></svg>
+        </span>
+      </div>
+      <span class="prof-theme-name">Custom</span>
+    </button>
+  `;
+
+  // Pre-fill custom pickers with whatever was last saved
+  if (saved.id === 'custom') {
+    document.getElementById('customPrimary').value   = saved.primary   || '#1d4ed8';
+    document.getElementById('customSecondary').value = saved.secondary || '#7c3aed';
+    document.getElementById('themeCustomWrap').style.display = '';
+  }
+
+  // Handle clicks on any preset/custom button
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-tid]');
+    if (!btn) return;
+
+    grid.querySelectorAll('.prof-theme-preset').forEach(b => b.classList.remove('prof-theme-preset-active'));
+    btn.classList.add('prof-theme-preset-active');
+
+    const id = btn.dataset.tid;
+    const customWrap = document.getElementById('themeCustomWrap');
+
+    if (id === 'custom') {
+      // Show the colour pickers — don't apply until the user clicks Apply
+      customWrap.style.display = '';
+    } else {
+      customWrap.style.display = 'none';
+      const t = THEMES.find(x => x.id === id);
+      if (t) window.TIQ_THEME_SAVE(t.primary, t.dark, t.light, t.secondary, t.id);
+    }
+  });
+
+  // Apply custom theme button
+  document.getElementById('applyCustomTheme').addEventListener('click', () => {
+    const primary   = document.getElementById('customPrimary').value;
+    const secondary = document.getElementById('customSecondary').value;
+    // Derive --green-dark (80 % brightness) and --green-light (12 % brightness)
+    // so hover states and faint backgrounds still make sense for any chosen colour.
+    const dark  = darkenHex(primary, 0.80);
+    const light = darkenHex(primary, 0.12);
+    window.TIQ_THEME_SAVE(primary, dark, light, secondary, 'custom');
+  });
+
+  // Live-preview primary while the colour picker is open (mouseup fires after pick)
+  document.getElementById('customPrimary').addEventListener('input', (e) => {
+    const r = document.documentElement.style;
+    r.setProperty('--green', e.target.value);
+  });
+  document.getElementById('customSecondary').addEventListener('input', (e) => {
+    document.documentElement.style.setProperty('--accent', e.target.value);
+  });
+})();
