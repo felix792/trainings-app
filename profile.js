@@ -87,10 +87,10 @@ window.DB_READY.then(async () => {
 // Runs immediately (no auth needed) — just reads localStorage and renders UI.
 
 const THEMES = [
-  { id: 'blue',   name: 'Night Blue',  primary: '#1d4ed8', dark: '#1e40af', light: '#0c1a3a', secondary: '#0e0e1a' },
-  { id: 'green',  name: 'Forest',      primary: '#16a34a', dark: '#15803d', light: '#052e16', secondary: '#0ea5e9' },
-  { id: 'orange', name: 'Sunset',      primary: '#ea580c', dark: '#c2410c', light: '#431407', secondary: '#f59e0b' },
-  { id: 'purple', name: 'Storm',       primary: '#7c3aed', dark: '#6d28d9', light: '#2e1065', secondary: '#ec4899' },
+  { id: 'blue',   name: 'Night Blue',  primary: '#1d4ed8', dark: '#1e40af', light: '#0c1a3a', secondary: '#000000' },
+  { id: 'green',  name: 'Forest',      primary: '#16a34a', dark: '#15803d', light: '#052e16', secondary: '#00110a' },
+  { id: 'orange', name: 'Sunset',      primary: '#ea580c', dark: '#c2410c', light: '#431407', secondary: '#130600' },
+  { id: 'purple', name: 'Storm',       primary: '#7c3aed', dark: '#6d28d9', light: '#2e1065', secondary: '#08000f' },
 ];
 
 // Compute a darker shade of a hex colour for the hover state.
@@ -177,6 +177,10 @@ function escHtmlProf(s) {
     r.setProperty('--green', e.target.value);
   });
   document.getElementById('customSecondary').addEventListener('input', (e) => {
-    document.documentElement.style.setProperty('--accent', e.target.value);
+    const bg = e.target.value;
+    const r  = document.documentElement.style;
+    r.setProperty('--bg',      bg);
+    r.setProperty('--surface', _tiqLighten(bg, 14));
+    r.setProperty('--border',  _tiqLighten(bg, 28));
   });
 })();
