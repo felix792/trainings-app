@@ -205,9 +205,8 @@ if (!player) {
       applyPlayerSections(window.APP_PERMISSIONS);
       document.body.classList.add('role-player');
       // Redirect if the player is trying to view someone else's profile
-      const uid = firebase.auth().currentUser?.uid;
-      const t   = loadTeams().find(x => x.id === teamId);
-      const me  = uid && (t?.players || []).find(p => p.uid === uid);
+      const t  = loadTeams().find(x => x.id === teamId);
+      const me = window.APP_GET_MY_PLAYER(t?.players);
       if (me && me.id !== playerId) {
         window.location.replace('player.html?teamId=' + teamId + '&playerId=' + me.id);
       }
