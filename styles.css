@@ -90,7 +90,7 @@ header {
   transition: border-color 0.15s, color 0.15s;
 }
 
-.btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+.btn-secondary:hover { border-color: #475569; color: var(--text); }
 
 /* ── Main ── */
 main {
