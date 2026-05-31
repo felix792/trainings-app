@@ -150,7 +150,8 @@ function renderCards() {
 
 window.DB_READY.then(() => {
   if (window.APP_ROLE !== 'player') return;
-  const me = window.APP_GET_MY_PLAYER(team?.players);
+  const uid = firebase.auth().currentUser?.uid;
+  const me  = uid && (team?.players || []).find(p => p.uid === uid);
   if (!me) return;
   document.querySelectorAll('.player-card-item').forEach(el => {
     if (el.dataset.playerId !== me.id) el.remove();
