@@ -1,3 +1,30 @@
+// ── Theme: apply saved colours immediately (before Firebase, to avoid flash) ──
+(function () {
+  try {
+    const t = JSON.parse(localStorage.getItem('tiq_theme') || 'null');
+    if (t && t.primary) {
+      const r = document.documentElement.style;
+      r.setProperty('--green',       t.primary);
+      r.setProperty('--green-dark',  t.dark    || t.primary);
+      r.setProperty('--green-light', t.light   || '#0c1a3a');
+      r.setProperty('--accent',      t.secondary || t.primary);
+    }
+  } catch (_) {}
+})();
+
+window.TIQ_THEME_GET = function () {
+  try { return JSON.parse(localStorage.getItem('tiq_theme') || 'null') || null; } catch { return null; }
+};
+window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
+  const t = { id: id || 'custom', primary, dark, light, secondary };
+  localStorage.setItem('tiq_theme', JSON.stringify(t));
+  const r = document.documentElement.style;
+  r.setProperty('--green',       primary);
+  r.setProperty('--green-dark',  dark    || primary);
+  r.setProperty('--green-light', light   || '#0c1a3a');
+  r.setProperty('--accent',      secondary || primary);
+};
+
 (function () {
   const STORAGE_KEY = 'football_coach_teams';
   const isHome = /\/(index\.html)?$/.test(window.location.pathname) ||
