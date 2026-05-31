@@ -483,7 +483,7 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
     // Runs before resolveReady so every page's DB_READY.then() already sees
     // APP_ROLE = 'player' and the forced player ID.
     const _tmRaw = sessionStorage.getItem('tiq_test_mode');
-    if (_tmRaw && window.TIQ_IS_DEV) {
+    if (_tmRaw && role === 'head-coach') {
       try {
         const _tm = JSON.parse(_tmRaw);
         if (_tm.active && _tm.playerId) {
