@@ -83,8 +83,10 @@ if (!team) {
       applyPlayerPermissions(window.APP_PERMISSIONS || {});
     } else {
       loadBlackboxCount();
-      if (window.APP_ROLE === 'head-coach') injectCoachPanel();
-      if (window.TIQ_IS_DEV) injectTestMode();
+      if (window.APP_ROLE === 'head-coach') {
+        injectCoachPanel();
+        injectTestMode();
+      }
     }
   });
 
