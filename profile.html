@@ -56,6 +56,25 @@
         </div>
       </div>
 
+      <!-- Appearance / theme picker -->
+      <div class="prof-section">
+        <div class="prof-section-title">Appearance</div>
+        <div class="prof-theme-grid" id="themePresets"></div>
+        <div class="prof-theme-custom" id="themeCustomWrap" style="display:none;">
+          <div class="prof-theme-custom-row">
+            <label class="prof-theme-color-label">
+              Primary colour
+              <input type="color" id="customPrimary" value="#1d4ed8" />
+            </label>
+            <label class="prof-theme-color-label">
+              Secondary colour
+              <input type="color" id="customSecondary" value="#7c3aed" />
+            </label>
+          </div>
+          <button class="btn-primary" id="applyCustomTheme" style="width:100%;">Apply</button>
+        </div>
+      </div>
+
       <div class="prof-actions">
         <button id="switchTeamBtn" class="prof-action-btn" style="display:none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
