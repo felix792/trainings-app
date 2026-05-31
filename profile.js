@@ -87,7 +87,7 @@ window.DB_READY.then(async () => {
 // Runs immediately (no auth needed) — just reads localStorage and renders UI.
 
 const THEMES = [
-  { id: 'blue',   name: 'Night Blue',  primary: '#1d4ed8', dark: '#1e40af', light: '#0c1a3a', secondary: '#7c3aed' },
+  { id: 'blue',   name: 'Night Blue',  primary: '#1d4ed8', dark: '#1e40af', light: '#0c1a3a', secondary: '#0e0e1a' },
   { id: 'green',  name: 'Forest',      primary: '#16a34a', dark: '#15803d', light: '#052e16', secondary: '#0ea5e9' },
   { id: 'orange', name: 'Sunset',      primary: '#ea580c', dark: '#c2410c', light: '#431407', secondary: '#f59e0b' },
   { id: 'purple', name: 'Storm',       primary: '#7c3aed', dark: '#6d28d9', light: '#2e1065', secondary: '#ec4899' },
