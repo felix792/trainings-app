@@ -83,10 +83,7 @@ if (!team) {
       applyPlayerPermissions(window.APP_PERMISSIONS || {});
     } else {
       loadBlackboxCount();
-      if (window.APP_ROLE === 'head-coach') {
-        injectCoachPanel();
-        injectTestMode();
-      }
+      if (window.APP_ROLE === 'head-coach') injectCoachPanel();
     }
   });
 
@@ -136,51 +133,6 @@ function applyPlayerPermissions(permissions) {
 }
 
 // â”€â”€ Coach: inject settings icon that links to settings page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function injectTestMode() {
-  // Only visible for the dev account — lets you preview any player's perspective
-  const header = document.querySelector('.header-inner');
-  const tmBtn  = document.createElement('button');
-  tmBtn.id          = 'test-mode-btn';
-  tmBtn.title       = 'Test Mode — preview as player';
-  tmBtn.textContent = '🧪';
-  tmBtn.addEventListener('click', () => {
-    const t       = loadTeams().find(x => x.id === teamId);
-    const players = (t && t.players) || [];
-    const list    = document.getElementById('testModePlayerList');
-
-    if (!players.length) {
-      list.innerHTML = '<p style="padding:16px;color:var(--text-muted);font-size:.85rem;">No players in this team yet.</p>';
-    } else {
-      list.innerHTML = players.map(p => {
-        const init = (p.name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
-        return `<div class="lu-picker-item" data-pid="${p.id}" data-pname="${p.name.replace(/"/g,'&quot;')}">
-          <div class="lu-picker-avatar">${init}</div>
-          <div class="lu-picker-info"><span class="lu-picker-name">${p.name}</span></div>
-        </div>`;
-      }).join('');
-      list.querySelectorAll('.lu-picker-item').forEach(item => {
-        item.addEventListener('click', () => {
-          sessionStorage.setItem('tiq_test_mode', JSON.stringify({
-            active: true,
-            playerId: item.dataset.pid,
-            playerName: item.dataset.pname
-          }));
-          location.reload();
-        });
-      });
-    }
-    document.getElementById('testModeBackdrop').classList.add('active');
-  });
-  header.appendChild(tmBtn);
-
-  document.getElementById('closeTestMode').addEventListener('click', () =>
-    document.getElementById('testModeBackdrop').classList.remove('active'));
-  document.getElementById('testModeBackdrop').addEventListener('click', e => {
-    if (e.target === document.getElementById('testModeBackdrop'))
-      document.getElementById('testModeBackdrop').classList.remove('active');
-  });
-}
-
 function injectCoachPanel() {
   const header = document.querySelector('.header-inner');
   const settingsBtn = document.createElement('button');
