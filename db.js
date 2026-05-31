@@ -1,13 +1,26 @@
 // ── Theme: apply saved colours immediately (before Firebase, to avoid flash) ──
+
+// Lighten a hex colour by adding `n` to every RGB channel (capped at 255).
+// Used to auto-derive --surface and --border from the chosen background colour.
+function _tiqLighten(hex, n) {
+  return '#' + [1, 3, 5].map(i =>
+    Math.min(255, parseInt((hex || '#000000').slice(i, i + 2), 16) + n)
+      .toString(16).padStart(2, '0')
+  ).join('');
+}
+
 (function () {
   try {
     const t = JSON.parse(localStorage.getItem('tiq_theme') || 'null');
     if (t && t.primary) {
-      const r = document.documentElement.style;
+      const r   = document.documentElement.style;
+      const bg  = t.secondary || '#000000';
       r.setProperty('--green',       t.primary);
-      r.setProperty('--green-dark',  t.dark    || t.primary);
-      r.setProperty('--green-light', t.light   || '#0c1a3a');
-      r.setProperty('--accent',      t.secondary || '#0e0e1a');
+      r.setProperty('--green-dark',  t.dark  || t.primary);
+      r.setProperty('--green-light', t.light || '#0c1a3a');
+      r.setProperty('--bg',          bg);
+      r.setProperty('--surface',     _tiqLighten(bg, 14));
+      r.setProperty('--border',      _tiqLighten(bg, 28));
     }
   } catch (_) {}
 })();
@@ -16,13 +29,16 @@ window.TIQ_THEME_GET = function () {
   try { return JSON.parse(localStorage.getItem('tiq_theme') || 'null') || null; } catch { return null; }
 };
 window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
-  const t = { id: id || 'custom', primary, dark, light, secondary };
+  const t  = { id: id || 'custom', primary, dark, light, secondary };
   localStorage.setItem('tiq_theme', JSON.stringify(t));
-  const r = document.documentElement.style;
+  const r  = document.documentElement.style;
+  const bg = secondary || '#000000';
   r.setProperty('--green',       primary);
-  r.setProperty('--green-dark',  dark    || primary);
-  r.setProperty('--green-light', light   || '#0c1a3a');
-  r.setProperty('--accent',      secondary || primary);
+  r.setProperty('--green-dark',  dark  || primary);
+  r.setProperty('--green-light', light || '#0c1a3a');
+  r.setProperty('--bg',          bg);
+  r.setProperty('--surface',     _tiqLighten(bg, 14));
+  r.setProperty('--border',      _tiqLighten(bg, 28));
 };
 
 (function () {
