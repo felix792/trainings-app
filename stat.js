@@ -248,8 +248,9 @@ window.DB_READY.then(() => {
   document.body.classList.add('role-player');
   document.querySelectorAll('.stat-input').forEach(inp => { inp.disabled = true; });
   // Hide every stat row that doesn't belong to the current player
-  const t  = loadTeams().find(x => x.id === teamId);
-  const me = window.APP_GET_MY_PLAYER(t?.players);
+  const uid = firebase.auth().currentUser?.uid;
+  const t   = loadTeams().find(x => x.id === teamId);
+  const me  = uid && (t?.players || []).find(p => p.uid === uid);
   if (me) {
     document.querySelectorAll('.stat-player-row').forEach(row => {
       const inp = row.querySelector('[data-player-id]');
