@@ -53,9 +53,8 @@ if (!team) {
   window.DB_READY.then(() => {
     if (window.APP_ROLE === 'player') {
       document.body.classList.add('role-player');
-      const uid = firebase.auth().currentUser?.uid;
-      const t   = getTeam();
-      const me  = uid && (t?.players || []).find(p => p.uid === uid);
+      const t  = getTeam();
+      const me = window.APP_GET_MY_PLAYER(t?.players);
       if (me) {
         window.location.replace('player.html?teamId=' + teamId + '&playerId=' + me.id);
       } else {
