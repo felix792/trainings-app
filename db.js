@@ -25,6 +25,22 @@ function _tiqLighten(hex, n) {
   } catch (_) {}
 })();
 
+// ── Developer test-mode helpers (restricted to one account) ──────────────────
+const _DEV_EMAIL = '444xs2xtdh@privaterelay.appleid.com';
+
+window.TIQ_IS_DEV = false;
+
+// Returns the current user's matching player entry.
+// In test mode, matches by the forced player ID instead of by Firebase UID.
+window.APP_GET_MY_PLAYER = function (players) {
+  const list = players || [];
+  if (window.APP_TEST_PLAYER_ID) {
+    return list.find(p => p.id === window.APP_TEST_PLAYER_ID) || null;
+  }
+  const uid = firebase.auth().currentUser?.uid;
+  return uid ? (list.find(p => p.uid === uid) || null) : null;
+};
+
 window.TIQ_THEME_GET = function () {
   try { return JSON.parse(localStorage.getItem('tiq_theme') || 'null') || null; } catch { return null; }
 };
@@ -459,6 +475,47 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
 
     cloudReady = true;
     window.APP_MEMBERSHIPS = allMemberships || [];
+
+    // Mark if this is the dev account
+    if (user.email === _DEV_EMAIL) window.TIQ_IS_DEV = true;
+
+    // ── Test-mode override (dev account only) ─────────────────────────────────
+    // Runs before resolveReady so every page's DB_READY.then() already sees
+    // APP_ROLE = 'player' and the forced player ID.
+    const _tmRaw = sessionStorage.getItem('tiq_test_mode');
+    if (_tmRaw && window.TIQ_IS_DEV) {
+      try {
+        const _tm = JSON.parse(_tmRaw);
+        if (_tm.active && _tm.playerId) {
+          window.APP_ROLE            = 'player';
+          window.APP_TEST_PLAYER_ID  = _tm.playerId;
+          window.APP_TEST_PLAYER_NAME = _tm.playerName || 'Player';
+          if (!window.APP_PERMISSIONS) {
+            window.APP_PERMISSIONS = {
+              players: true, exercises: true, plays: true, stats: true,
+              points: true, cards: true, livegame: true, calendar: true,
+              lineups: true, blackbox: true
+            };
+          }
+          document.body.classList.add('player-mode', 'test-mode');
+
+          // Inject the orange test-mode banner at the very top of every page
+          const banner = document.createElement('div');
+          banner.id = 'test-mode-banner';
+          banner.innerHTML =
+            '<span>🧪 Test Mode &mdash; viewing as <strong>' +
+            escHtml(_tm.playerName || 'Player') + '</strong></span>' +
+            '<button id="exitTestMode">Exit</button>';
+          document.body.prepend(banner);
+          document.getElementById('exitTestMode').addEventListener('click', () => {
+            sessionStorage.removeItem('tiq_test_mode');
+            location.reload();
+          });
+        }
+      } catch (_) {}
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     hideOverlay();
     injectUserBadge(user, role, membership.teamName, allMemberships);
     resolveReady(user);
