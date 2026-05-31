@@ -7,7 +7,7 @@
       r.setProperty('--green',       t.primary);
       r.setProperty('--green-dark',  t.dark    || t.primary);
       r.setProperty('--green-light', t.light   || '#0c1a3a');
-      r.setProperty('--accent',      t.secondary || t.primary);
+      r.setProperty('--accent',      t.secondary || '#0e0e1a');
     }
   } catch (_) {}
 })();
