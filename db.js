@@ -409,6 +409,8 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
     document.querySelectorAll('.mem-card').forEach((card) => {
       card.addEventListener('click', async () => {
         const m = memberships[parseInt(card.dataset.index, 10)];
+        // Persist choice immediately so any redirect in activateMembership can read it
+        sessionStorage.setItem('tiq_session_mem', JSON.stringify({ teamId: m.teamId, ownerUid: m.ownerUid }));
         if (canClose) {
           // Team switch: store target and navigate to home
           sessionStorage.setItem('tiq_active_mem', JSON.stringify({ teamId: m.teamId, ownerUid: m.ownerUid }));
@@ -429,6 +431,9 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
   // ── Activate membership ──────────────────────────────────────────────────────
   async function activateMembership(user, membership, allMemberships) {
     const { role, ownerUid } = membership;
+
+    // Persist choice so page navigations in this session skip the selector
+    sessionStorage.setItem('tiq_session_mem', JSON.stringify({ teamId: membership.teamId, ownerUid }));
 
     if (role === 'head-coach') {
       showOverlay('<div style="color:#94a3b8;font-size:.9rem;">Syncing data…</div>');
@@ -529,6 +534,20 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
       } catch (_) {}
     }
 
+    // Restore previously chosen team for this browser session so navigating
+    // between pages doesn't re-show the selector when there are multiple memberships
+    const sessionMem = sessionStorage.getItem('tiq_session_mem');
+    if (sessionMem) {
+      try {
+        const { teamId, ownerUid } = JSON.parse(sessionMem);
+        const target = memberships.find((m) => m.teamId === teamId && m.ownerUid === ownerUid);
+        if (target) {
+          await activateMembership(user, target, memberships);
+          return;
+        }
+      } catch (_) {}
+    }
+
     if (memberships.length === 1) {
       await activateMembership(user, memberships[0], memberships);
     } else {
@@ -536,7 +555,10 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
     }
   });
 
-  window.signOut = () => firebase.auth().signOut();
+  window.signOut = () => {
+    sessionStorage.removeItem('tiq_session_mem');
+    firebase.auth().signOut();
+  };
 
   window.loadProfileData = async () => {
     const user = firebase.auth().currentUser;
