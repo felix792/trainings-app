@@ -206,8 +206,29 @@ function renderMembers(members) {
           ${inv.label ? `<div class="sp-member-label">${escapeHtml(inv.label)}</div>` : ''}
         </div>
         <span class="${tagCls}">${roleLabel}</span>
+        <button class="sp-revoke-btn sp-remove-member-btn"
+          data-code="${escapeHtml(inv.id)}"
+          data-uid="${escapeHtml(inv.usedBy || '')}"
+          data-owner="${escapeHtml(window.APP_OWNER_UID || '')}"
+          data-team="${escapeHtml(teamId || '')}">Remove</button>
       </div>`;
   }).join('')}</div>`;
+
+  el.querySelectorAll('.sp-remove-member-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const name = btn.closest('.sp-member-row').querySelector('.sp-member-name').textContent;
+      showConfirm(`Remove ${name} from the team?`, async () => {
+        btn.disabled = true;
+        try {
+          await window.removeMember(btn.dataset.code, btn.dataset.uid, btn.dataset.owner, btn.dataset.team);
+          loadInvites();
+        } catch {
+          showToast('Failed to remove member. Please try again.', 'error');
+          btn.disabled = false;
+        }
+      });
+    });
+  });
 }
 
 // ── Player Permissions ────────────────────────────────────────────────────────
