@@ -630,6 +630,21 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
   window.deleteInvite = async (code) => {
     await firebase.firestore().collection('invites').doc(code).delete();
   };
+
+  window.removeMember = async (inviteCode, memberUid, ownerUid, teamId) => {
+    const db = firebase.firestore();
+    await db.collection('invites').doc(inviteCode).delete();
+    if (memberUid) {
+      const userRef = db.collection('users').doc(memberUid);
+      const snap = await userRef.get();
+      if (snap.exists) {
+        const memberships = (snap.data().memberships || []).filter(
+          (m) => !(m.ownerUid === ownerUid && m.teamId === teamId)
+        );
+        await userRef.update({ memberships });
+      }
+    }
+  };
 })();
 
 // ── In-app UI utilities (replaces alert / confirm / prompt) ──────────────────
