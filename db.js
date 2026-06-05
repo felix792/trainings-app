@@ -440,7 +440,7 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
       try {
         const snap = await userDoc(user.uid).get();
         const data  = snap.exists ? snap.data() : {};
-        if (isHome && data.teams) origSet(STORAGE_KEY, data.teams);
+        if (data.teams) origSet(STORAGE_KEY, data.teams);
         window.APP_COACH_SYSTEM = data.coachSystem || 'multi';
       } catch (_) { window.APP_COACH_SYSTEM = 'multi'; }
       window.APP_ROLE      = 'head-coach';
@@ -450,7 +450,7 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
       try {
         const snap = await userDoc(ownerUid).get();
         const ownerData = snap.exists ? snap.data() : {};
-        if (isHome && ownerData.teams) origSet(STORAGE_KEY, ownerData.teams);
+        if (ownerData.teams) origSet(STORAGE_KEY, ownerData.teams);
         window.APP_COACH_SYSTEM = ownerData.coachSystem || 'multi';
         if (role === 'player') {
           window.APP_PERMISSIONS = ownerData.playerPermissions ||
