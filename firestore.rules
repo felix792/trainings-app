@@ -1,0 +1,96 @@
+rules_version = '2';
+
+// TactIQ — Firestore security rules
+//
+// Apply via Firebase Console → Firestore Database → Rules → paste → Publish.
+// Project: football-coach-84f96
+//
+// Collections used by the app:
+//   users/{uid}                        profile, memberships, teams JSON, permissions
+//   invites/{6-CHAR-CODE}              invite codes
+//   blackbox/{coachUid}/notes/{id}     anonymous player notes to their coach
+//   rsvps/{teamId_eventId_date}        calendar attendance responses
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // UIDs whose team data the signed-in user is allowed to write on behalf of
+    // (i.e. head coaches they assist). Returns [] when the field is absent, so
+    // this clause simply never grants anything until the app maintains it.
+    function coachedUids() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('coachUids', []);
+    }
+
+    match /users/{userId} {
+      // Any signed-in user may read a profile document. Players and assistant
+      // coaches read the head coach's doc for team data, player permissions and
+      // the coach-system setting; the settings page reads member profiles.
+      allow read: if signedIn();
+
+      // Your own document. `create` is the one that "Create Team" needs — it is
+      // the first write to a brand-new account, since nothing creates the doc
+      // earlier in the auth flow.
+      allow create, update, delete: if isSelf(userId);
+
+      // An assistant coach syncing team data into the head coach's document,
+      // and a head coach editing a member's memberships (removeMember).
+      allow update: if signedIn() && userId in coachedUids();
+    }
+
+    match /invites/{code} {
+      // A joining user has to look up a code before they are a member of
+      // anything, so any signed-in user can read invite docs. Head coaches also
+      // list their own invites with a where('ownerUid','==',uid) query.
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+                    && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if signedIn() && (
+        // The owning coach can edit their own invite freely.
+        resource.data.ownerUid == request.auth.uid
+        // Or someone is claiming an unused code: only the bookkeeping fields
+        // may change, and they must claim it for themselves.
+        || (
+          resource.data.used == false
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['used', 'usedBy', 'usedByName', 'usedAt', 'playerProfile'])
+          && request.resource.data.usedBy == request.auth.uid
+        )
+      );
+
+      allow delete: if signedIn()
+                    && resource.data.ownerUid == request.auth.uid;
+    }
+
+    match /blackbox/{coachUid}/notes/{noteId} {
+      // Only the coach may read or delete. Players being unable to read is what
+      // actually keeps these notes anonymous.
+      allow read, delete: if isSelf(coachUid);
+
+      // Any signed-in user may leave a note. No author field is stored.
+      allow create: if signedIn();
+      allow update: if false;
+    }
+
+    match /rsvps/{rsvpId} {
+      // Doc ids are teamId_eventId_date and carry no owner reference, so these
+      // cannot be scoped to a team without a data-model change.
+      allow read, write: if signedIn();
+    }
+
+    // Everything else is denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
