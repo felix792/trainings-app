@@ -204,14 +204,15 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
   }
 
   // ── Create team screen ───────────────────────────────────────────────────────
-  function showCreateTeam(user) {
+  function showCreateTeam(user, errorMsg, prefill) {
     showOverlay(`
       <div style="text-align:center;max-width:340px;width:100%;">
         <div style="font-size:2.5rem;margin-bottom:12px;">🎽</div>
         <div style="color:#f1f5f9;font-size:1.1rem;font-weight:700;margin-bottom:6px;">Create Your Team</div>
         <div style="color:#94a3b8;font-size:.85rem;margin-bottom:24px;">What's your team called?</div>
-        <input id="team-name-input" placeholder="Team name (e.g. FC Tigers)"
-          style="width:100%;background:#0e0e1a;border:1px solid #334155;color:#f1f5f9;border-radius:8px;padding:12px 14px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:16px;"/>
+        <input id="team-name-input" placeholder="Team name (e.g. FC Tigers)" value="${escHtml(prefill || '')}"
+          style="width:100%;background:#0e0e1a;border:1px solid #334155;color:#f1f5f9;border-radius:8px;padding:12px 14px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:8px;"/>
+        <div id="create-error" style="color:#ef4444;font-size:.8rem;min-height:20px;margin-bottom:12px;line-height:1.4;">${escHtml(errorMsg || '')}</div>
         <button id="create-team-btn" style="width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;">Create Team</button>
         <button id="create-back-btn" style="width:100%;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;padding:10px;font-size:.85rem;cursor:pointer;">← Back</button>
       </div>`);
@@ -226,16 +227,37 @@ window.TIQ_THEME_SAVE = function (primary, dark, light, secondary, id) {
         ? crypto.randomUUID()
         : Date.now().toString(36) + Math.random().toString(36).slice(2);
       const membership = { teamId, teamName: name, role: 'head-coach', ownerUid: user.uid, joinedAt: Date.now() };
-      const existing = await getProfile(user.uid);
-      const existingMems = (existing && existing.memberships) || [];
-      await saveProfile(user.uid, {
-        memberships: [...existingMems, membership],
-        playerPermissions: (existing && existing.playerPermissions) || {
-          players: true, exercises: true, plays: true, stats: true, points: true, cards: true, blackbox: true,
-          playerSections: { attributes: true, categoryProgression: true, gameStats: true, statProgression: true }
+      try {
+        const existing = await getProfile(user.uid);
+        const existingMems = (existing && existing.memberships) || [];
+
+        // The membership only records *that* a team exists — the app itself reads
+        // teams from the `teams` JSON blob, so seed the actual team record too,
+        // otherwise the home screen comes up empty right after creating it.
+        let teams = [];
+        try { teams = JSON.parse((existing && existing.teams) || '[]') || []; } catch (_) { teams = []; }
+        if (!teams.some((t) => t.id === teamId)) {
+          teams.unshift({ id: teamId, name, createdAt: new Date().toISOString() });
         }
-      });
-      await activateMembership(user, membership, [...existingMems, membership]);
+        const teamsJson = JSON.stringify(teams);
+
+        await saveProfile(user.uid, {
+          memberships: [...existingMems, membership],
+          teams: teamsJson,
+          updatedAt: Date.now(),
+          playerPermissions: (existing && existing.playerPermissions) || {
+            players: true, exercises: true, plays: true, stats: true, points: true, cards: true, blackbox: true,
+            playerSections: { attributes: true, categoryProgression: true, gameStats: true, statProgression: true }
+          }
+        });
+        origSet(STORAGE_KEY, teamsJson);
+        await activateMembership(user, membership, [...existingMems, membership]);
+      } catch (err) {
+        const msg = (err && (err.code === 'permission-denied'
+          ? 'Permission denied by the database. Check your Firestore rules.'
+          : err.message)) || 'Something went wrong.';
+        showCreateTeam(user, "Couldn't create the team: " + msg, name);
+      }
     };
     document.getElementById('create-team-btn').addEventListener('click', create);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') create(); });
